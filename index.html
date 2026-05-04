@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROM-Connect: 관절 각도 측정 웹</title>
+    <!-- 1. MediaPipe Pose 라이브러리 및 TensorFlow.js 로드 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; color: #333; }
+        .container { text-align: center; }
+        #imagePreview { max-width: 100%; height: auto; border: 2px dashed #ccc; border-radius: 8px; margin-top: 15px; }
+        .result-box { margin-top: 20px; padding: 20px; background-color: #f0f8ff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .recommendation { margin-top: 20px; padding: 20px; background-color: #e6ffe6; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>ROM-Connect 측정기</h2>
+        <p>수술 부위(예: 무릎)가 측면에서 잘 보이는 사진을 업로드해 주세요.</p>
+        
+        <input type="file" id="imageUpload" accept="image/*" class="btn">
+        <br>
+        <img id="imagePreview" style="display:none;" alt="업로드된 이미지 미리보기">
+        
+        <div id="resultBox" class="result-box" style="display:none;">
+            <h3>📐 측정 결과</h3>
+            <p id="angleResult" style="font-size: 1.2em; font-weight: bold;">AI 이미지 분석 중...</p>
+        </div>
+
+        <div id="recommendationBox" class="recommendation" style="display:none;">
+            <h3>💪 맞춤형 재활 운동 추천</h3>
+            <p id="exerciseText"></p>
+            <button class="btn" style="background-color: #28a745;">추천 운동 영상 보기</button>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+        const resultBox = document.getElementById('resultBox');
+        const angleResult = document.getElementById('angleResult');
+        const recommendationBox = document.getElementById('recommendationBox');
+        const exerciseText = document.getElementById('exerciseText');
+
+        // 수학적 3점 각도 계산 함수
+        function calculateAngle(a, b, c) {
+            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+            let angle = Math.abs(radians * 180.0 / Math.PI);
+            if (angle > 180.0) {
+                angle = 360.0 - angle;
+            }
+            return angle;
+        }
+
+        // 사용자가 이미지를 업로드했을 때의 이벤트 처리
+        imageUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // 이미지 미리보기 표시
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    resultBox.style.display = 'block';
+                    recommendationBox.style.display = 'none';
+                    angleResult.innerText = "AI 모델이 관절 포인트를 추측하고 있습니다...";
+                    
+                    // 실제 환경에서는 여기서 MediaPipe Pose 모델에 이미지를 주입(send)한다.
+                    // 본 프로토타입에서는 추론 처리 시간을 1.5초 지연으로 시뮬레이션한다.
+                    setTimeout(() => runPoseEstimationSimulation(), 1500);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // AI 추론 결과 시뮬레이션
+        function runPoseEstimationSimulation() {
+            // MediaPipe에서 반환될 가상의 무릎 관련 랜드마크 좌표 (엉덩이, 무릎, 발목)
+            const hip = { x: 0.5, y: 0.3 };
+            const knee = { x: 0.6, y: 0.6 };
+            const ankle = { x: 0.45, y: 0.85 };
+
+            // 각도 연산 수행
+            const kneeAngle = calculateAngle(hip, knee, ankle).toFixed(1);
+            
+            angleResult.innerHTML = `현재 무릎 굴곡 각도는 <span style='color: #d9534f;'>${kneeAngle}도</span>로 측정되었습니다.`;
+            showRecommendation(kneeAngle);
+        }
+
+        // 측정 결과 기반의 분기별 처방 로직
+        function showRecommendation(angle) {
+            recommendationBox.style.display = 'block';
+            
+            // 단순 각도 기준의 추천 알고리즘 예시 (실제로는 수술 주차, 통증 지수 등이 복합적으로 고려되어야 함)
+            if (angle < 90) {
+                exerciseText.innerHTML = "<strong>[초급 단계]</strong> 현재 각도가 90도 미만입니다. 무리한 구부리기보다 가동 범위를 점진적으로 늘리는 '수건을 이용한 발뒤꿈치 슬라이딩' 운동을 추천합니다.";
+            } else if (angle >= 90 && angle <= 120) {
+                exerciseText.innerHTML = "<strong>[중급 단계]</strong> 회복 궤적이 양호합니다. 관절 안정화를 위해 허벅지 근력을 강화하는 '의자에 앉아 다리 뻗고 버티기' 운동을 권장합니다.";
+            } else {
+                exerciseText.innerHTML = "<strong>[고급 단계]</strong> 가동 범위가 일상생활에 지장이 없는 수준입니다. 체중 지지 능력을 높이는 '미니 스쿼트'로 전환할 수 있습니다.";
+            }
+        }
+    </script>
+</body>
+</html>
