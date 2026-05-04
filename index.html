@@ -3,111 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROM-Connect: 관절 각도 측정 웹</title>
+    <title>ROM-Connect | 스마트 재활 간호 서비스</title>
+    
+    <!-- 라이브러리 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; color: #333; }
-        .container { text-align: center; }
-        #imagePreview { max-width: 100%; height: auto; border: 2px dashed #ccc; border-radius: 8px; margin-top: 15px; display: none; }
-        .result-box { margin-top: 20px; padding: 20px; background-color: #f0f8ff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
-        .recommendation { margin-top: 20px; padding: 20px; background-color: #e6ffe6; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
-        .btn { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        :root {
+            --primary-color: #2c7be5;
+            --secondary-color: #00d97e;
+            --warning-color: #f3545d;
+            --bg-color: #f9fbfd;
+            --card-shadow: 0 4px 6px rgba(10, 10, 10, 0.05);
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .app-container { max-width: 800px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { color: var(--primary-color); margin-bottom: 5px; }
+        header p { color: #666; font-size: 0.9rem; }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #e3ebf6;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 측정 영역 */
+        #input-section { text-align: center; }
+        .upload-btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-block;
+            transition: 0.3s;
+        }
+        #imagePreview { width: 100%; border-radius: 10px; margin-top: 15px; display: none; }
+
+        /* 결과 박스 */
+        .result-highlight {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 15px 0;
+            font-weight: 800;
+        }
+
+        /* 체크리스트 & 메모 */
+        .check-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        textarea { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; resize: none; }
+        input[type="number"] { width: 60px; padding: 5px; border-radius: 4px; border: 1px solid #ddd; }
+
+        /* 주의사항 */
+        .warning-box {
+            background-color: #fff5f5;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            color: #b91c1c;
+            font-weight: bold;
+        }
+
+        /* 버튼 스타일 */
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--secondary-color);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        canvas { width: 100% !important; max-height: 250px; }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .card { padding: 15px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>ROM-Connect 측정기</h2>
-        <p>수술 부위(예: 무릎)가 측면에서 잘 보이는 사진을 업로드해 주세요.</p>
-        
-        <input type="file" id="imageUpload" accept="image/*" class="btn">
-        <br>
-        <img id="imagePreview" alt="업로드된 이미지 미리보기">
-        
-        <div id="resultBox" class="result-box">
-            <h3>📐 측정 결과</h3>
-            <p id="angleResult" style="font-size: 1.2em; font-weight: bold;">AI 이미지 분석 중...</p>
-        </div>
 
-        <div id="recommendationBox" class="recommendation">
-            <h3>💪 맞춤형 재활 운동 추천</h3>
-            <p id="exerciseText"></p>
-            <button class="btn" style="background-color: #28a745;">추천 운동 영상 보기</button>
+<div class="app-container">
+    <header>
+        <h1>ROM-Connect</h1>
+        <p>환자님의 빠른 회복을 돕는 AI 재활 파트너</p>
+    </header>
+
+    <!-- 1. 측정 섹션 -->
+    <div class="card" id="input-section">
+        <div class="card-title">🔍 무릎 각도 측정</div>
+        <p style="font-size: 0.85rem; color: #777;">측면에서 촬영된 무릎 사진을 업로드해 주세요.</p>
+        <label for="imageUpload" class="upload-btn">사진 선택하기</label>
+        <input type="file" id="imageUpload" accept="image/*" style="display:none;">
+        <canvas id="outputCanvas" style="display:none;"></canvas>
+        <img id="imagePreview">
+        
+        <div id="loading" style="display:none; margin-top:10px;">🩺 AI가 관절을 분석 중입니다...</div>
+        <div id="resultArea" style="display:none;">
+            <div class="result-highlight" id="angleDisplay">0°</div>
+            <div id="recommendationContent"></div>
+            <button id="videoBtn" class="action-btn">🎬 추천 운동 영상 보기</button>
         </div>
     </div>
 
-    <script>
-        const imageUpload = document.getElementById('imageUpload');
-        const imagePreview = document.getElementById('imagePreview');
-        const resultBox = document.getElementById('resultBox');
-        const angleResult = document.getElementById('angleResult');
-        const recommendationBox = document.getElementById('recommendationBox');
-        const exerciseText = document.getElementById('exerciseText');
+    <!-- 2. 데일리 체크리스트 -->
+    <div class="card">
+        <div class="card-title">📝 오늘의 건강 상태</div>
+        <div class="check-item">
+            <input type="checkbox" id="check-med"> <label for="check-med">오늘 약을 복용했나요?</label>
+        </div>
+        <div class="check-item">
+            <input type="checkbox" id="check-exercise"> <label for="check-exercise">오늘 권장 운동을 수행했나요?</label>
+        </div>
+        <div class="check-item">
+            <label>통증 점수(NRS): </label>
+            <input type="number" id="nrs-score" min="0" max="10" value="0">
+            <span style="font-size: 0.8rem; color: #888;"> (0: 무통 ~ 10: 극심)</span>
+        </div>
+    </div>
 
-        // 1. 함수들을 밖으로 뺍니다 (중첩 방지)
-        function calculateAngle(a, b, c) {
-            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
-            let angle = Math.abs(radians * 180.0 / Math.PI);
-            if (angle > 180.0) {
-                angle = 360.0 - angle;
-            }
-            return angle;
+    <!-- 3. 진척도 그래프 -->
+    <div class="card">
+        <div class="card-title">📈 회복 기록</div>
+        <canvas id="progressChart"></canvas>
+    </div>
+
+    <!-- 4. 질문 메모 -->
+    <div class="card">
+        <div class="card-title">💡 의료진에게 궁금한 점</div>
+        <textarea id="user-memo" rows="3" placeholder="회복 과정에서 궁금한 점이나 통증 양상을 기록해 두세요."></textarea>
+        <button class="action-btn" style="background: var(--primary-color);" onclick="saveData()">기록 저장하기</button>
+    </div>
+
+    <!-- 5. 주의사항 -->
+    <div class="card warning-box">
+        ⚠️ 주의사항: 열감이 느껴지거나 갑자기 부어오를 경우 즉시 의료진과 상담하세요.
+    </div>
+</div>
+
+<script>
+    const imageUpload = document.getElementById('imageUpload');
+    const imagePreview = document.getElementById('imagePreview');
+    const loading = document.getElementById('loading');
+    const resultArea = document.getElementById('resultArea');
+    const angleDisplay = document.getElementById('angleDisplay');
+    const recommendationContent = document.getElementById('recommendationContent');
+    const videoBtn = document.getElementById('videoBtn');
+    
+    let chart;
+    let currentAngle = 0;
+
+    // --- 1. MediaPipe 설정 ---
+    const pose = new Pose({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+    });
+
+    pose.setOptions({
+        modelComplexity: 1,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+    });
+
+    pose.onResults(onResults);
+
+    // --- 2. 핵심 로직: 각도 계산 ---
+    function calculateAngle(a, b, c) {
+        const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+        let angle = Math.abs(radians * 180.0 / Math.PI);
+        if (angle > 180.0) angle = 360.0 - angle;
+        return angle;
+    }
+
+    // --- 3. 이미지 업로드 처리 ---
+    imageUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            imagePreview.src = event.target.result;
+            imagePreview.style.display = 'block';
+            loading.style.display = 'block';
+            resultArea.style.display = 'none';
+
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = async () => {
+                await pose.send({image: img});
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // --- 4. 분석 결과 처리 및 추천 분기 ---
+    function onResults(results) {
+        loading.style.display = 'none';
+        if (!results.poseLandmarks) {
+            alert("관절을 인식하지 못했습니다. 무릎이 잘 보이는 사진으로 다시 시도해주세요.");
+            return;
         }
 
-        function showRecommendation(angle) {
-            recommendationBox.style.display = 'block';
-            if (angle < 90) {
-                exerciseText.innerHTML = "<strong>[초급 단계]</strong> 현재 각도가 90도 미만입니다. '수건을 이용한 발뒤꿈치 슬라이딩' 운동을 추천합니다.";
-            } else if (angle >= 90 && angle <= 120) {
-                exerciseText.innerHTML = "<strong>[중급 단계]</strong> 회복 궤적이 양호합니다. '의자에 앉아 다리 뻗고 버티기' 운동을 권장합니다.";
-            } else {
-                exerciseText.innerHTML = "<strong>[고급 단계]</strong> 가동 범위가 양호합니다. '미니 스쿼트'로 전환할 수 있습니다.";
-            }
+        const lm = results.poseLandmarks;
+        // 엉덩이(24), 무릎(26), 발목(28) - 오른쪽 기준 (왼쪽은 23, 25, 27)
+        const hip = lm[24];
+        const knee = lm[26];
+        const ankle = lm[28];
+
+        currentAngle = calculateAngle(hip, knee, ankle).toFixed(1);
+        displayResult(currentAngle);
+    }
+
+    function displayResult(angle) {
+        resultArea.style.display = 'block';
+        angleDisplay.innerText = `${angle}°`;
+        
+        let content = "";
+        let videoUrl = "";
+
+        if (angle < 60) {
+            content = `
+                <p><strong>[초기 단계] 통증 관리기</strong></p>
+                <ul>
+                    <li>수술 초기 부종 관리가 핵심입니다.</li>
+                    <li><strong>CPM:</strong> 통증이 없는 범위 내에서 지속적 수동 운동을 권장합니다.</li>
+                    <li><strong>아이싱:</strong> 운동 후 20분간 냉찜질을 반드시 해주세요.</li>
+                </ul>`;
+            videoUrl = "https://www.youtube.com/results?search_query=knee+rehab+early+stage";
+        } else if (angle < 90) {
+            content = `
+                <p><strong>[중기 단계] 가동성 회복기</strong></p>
+                <ul>
+                    <li><strong>SLR(다리 들기):</strong> 누운 상태에서 다리를 곧게 펴서 들어올려 허벅지 힘을 기르세요.</li>
+                    <li><strong>Heel Slide:</strong> 뒤꿈치를 바닥에 대고 천천히 몸쪽으로 당겨 무릎을 구부립니다.</li>
+                </ul>`;
+            videoUrl = "https://www.youtube.com/results?search_query=heel+slides+exercise";
+        } else {
+            content = `
+                <p><strong>[후기 단계] 근력 강화기</strong></p>
+                <ul>
+                    <li><strong>미니 스쿼트:</strong> 무릎을 30도 정도만 살짝 굽혔다 펴며 근력을 강화합니다.</li>
+                    <li><strong>주의:</strong> 계단을 내려갈 때 무릎에 체중이 실리지 않도록 난간을 꼭 잡으세요.</li>
+                </ul>`;
+            videoUrl = "https://www.youtube.com/results?search_query=knee+strengthening+exercises";
         }
 
-        function runPoseEstimationSimulation() {
-            // 가상의 랜드마크 데이터로 시뮬레이션
-            const hip = { x: 0.5, y: 0.3 };
-            const knee = { x: 0.6, y: 0.6 };
-            const ankle = { x: 0.45, y: 0.85 };
+        recommendationContent.innerHTML = content;
+        videoBtn.onclick = () => window.open(videoUrl, '_blank');
+        
+        saveAngleToHistory(angle);
+    }
 
-            const kneeAngle = calculateAngle(hip, knee, ankle).toFixed(1);
-            angleResult.innerHTML = `현재 무릎 굴곡 각도는 <span style='color: #d9534f;'>${kneeAngle}도</span>로 측정되었습니다.`;
-            showRecommendation(kneeAngle);
-        }
+    // --- 5. 데이터 저장 및 그래프 기능 ---
+    function saveAngleToHistory(angle) {
+        let history = JSON.parse(localStorage.getItem('romHistory') || '[]');
+        history.push({date: new Date().toLocaleDateString(), angle: parseFloat(angle)});
+        if(history.length > 7) history.shift(); // 최근 7개만 유지
+        localStorage.setItem('romHistory', JSON.stringify(history));
+        updateChart();
+    }
 
-        // 2. 이벤트 리스너를 독립적으로 설정합니다.
-        imageUpload.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                    resultBox.style.display = 'block';
-                    recommendationBox.style.display = 'none';
-                    angleResult.innerText = "AI 모델이 관절 포인트를 분석 중입니다...";
-                    
-                    // 1.5초 후 시뮬레이션 실행
-                    setTimeout(() => runPoseEstimationSimulation(), 1500);
-                }
-                reader.readAsDataURL(file);
+    function saveData() {
+        const data = {
+            med: document.getElementById('check-med').checked,
+            exercise: document.getElementById('check-exercise').checked,
+            nrs: document.getElementById('nrs-score').value,
+            memo: document.getElementById('user-memo').value
+        };
+        localStorage.setItem('dailyCheck', JSON.stringify(data));
+        alert("오늘의 기록이 저장되었습니다. 간호사 상담 시 활용하세요!");
+    }
+
+    function updateChart() {
+        const history = JSON.parse(localStorage.getItem('romHistory') || '[]');
+        const labels = history.map(h => h.date);
+        const data = history.map(h => h.angle);
+
+        if (chart) chart.destroy();
+
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '무릎 굴곡 각도 (°)',
+                    data: data,
+                    borderColor: '#2c7be5',
+                    backgroundColor: 'rgba(44, 123, 229, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: false, min: 0, max: 180 } }
             }
         });
+    }
 
-        // 3. MediaPipe 설정 (실제 분석 기능을 넣을 때 사용)
-        const pose = new Pose({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-        });
+    // 페이지 로드 시 기존 데이터 불러오기
+    window.onload = () => {
+        const lastData = JSON.parse(localStorage.getItem('dailyCheck') || '{}');
+        if(lastData.memo) document.getElementById('user-memo').value = lastData.memo;
+        updateChart();
+    };
+</script>
 
-        pose.setOptions({
-            modelComplexity: 1,
-            smoothLandmarks: true,
-            enableSegmentation: false,
-        });
-
-        pose.onResults((results) => {
-            // 실제 이미지 분석 결과가 나왔을 때 실행할 코드 (현재는 시뮬레이션 위주)
-        });
-    </script>
 </body>
 </html>
