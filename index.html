@@ -1,88 +1,907 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Pose Test</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>고관절 재활 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"/>
 </head>
-</body>
+<body style="margin:0;padding:0;background:#F0F9FF;">
+  <div id="root"></div>
 
-<div>Teachable Machine Pose Model</div>
-<button type="button" onclick="init()">Start</button>
-<div><canvas id="canvas"></canvas></div>
-<div id="label-container"></div>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
-<script type="text/javascript">
-    // More API functions here:
-    // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/pose
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 
-    // the link to your model provided by Teachable Machine export panel
-    const URL = "https://teachablemachine.withgoogle.com/models/E4jZNL6Hh/";
-    let model, webcam, ctx, labelContainer, maxPredictions;
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
-    async function init() {
-        const modelURL = URL + "model.json";
-        const metadataURL = URL + "metadata.json";
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-        // load the model and metadata
-        // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
-        // Note: the pose library adds a tmPose object to your window (window.tmPose)
-        model = await tmPose.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
 
-        // Convenience function to setup a webcam
-        const size = 200;
-        const flip = true; // whether to flip the webcam
-        webcam = new tmPose.Webcam(size, size, flip); // width, height, flip
-        await webcam.setup(); // request access to the webcam
-        await webcam.play();
-        window.requestAnimationFrame(loop);
+    /* ─────────────────────────────────────────────────────────────
+       아이콘 컴포넌트 (Lucide 아이콘 SVG 대체)
+    ───────────────────────────────────────────────────────────── */
+    function SvgIcon({ size=24, color='currentColor', paths=[], circles=[], rects=[], filled=false, strokeWidth=2 }) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24"
+          fill={filled ? color : 'none'}
+          stroke={filled ? 'none' : color}
+          strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          {circles.map(([cx,cy,r],i) => <circle key={i} cx={cx} cy={cy} r={r}/>)}
+          {rects.map(([x,y,w,h,rx],i) => <rect key={i} x={x} y={y} width={w} height={h} rx={rx||0}/>)}
+          {paths.map((d,i) => <path key={i} d={d}/>)}
+        </svg>
+      );
+    }
+    const Home       = ({size,color}) => <SvgIcon size={size} color={color} paths={['M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z','M9 22V12h6v10']}/>;
+    const Dumbbell   = ({size,color}) => <SvgIcon size={size} color={color} paths={['M6.5 6.5h11','M6.5 17.5h11','M3 5h3v14H3z','M18 5h3v14h-3z']}/>;
+    const BarChart2  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M18 20V10','M12 20V4','M6 20v-6']}/>;
+    const Settings   = ({size,color}) => <SvgIcon size={size} color={color} paths={['M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z']} circles={[[12,12,3]]}/>;
+    const ChevronRight = ({size,color}) => <SvgIcon size={size} color={color} paths={['M9 18l6-6-6-6']}/>;
+    const ChevronLeft  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M15 18l-6-6 6-6']}/>;
+    const ChevronDown  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M6 9l6 6 6-6']}/>;
+    const ChevronUp    = ({size,color}) => <SvgIcon size={size} color={color} paths={['M18 15l-6-6-6 6']}/>;
+    const CheckCircle  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M22 11.08V12a10 10 0 1 1-5.93-9.14','M22 4L12 14.01l-3-3']}/>;
+    const Circle       = ({size,color}) => <SvgIcon size={size} color={color} circles={[[12,12,10]]}/>;
+    const AlertTriangle= ({size,color}) => <SvgIcon size={size} color={color} paths={['M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z','M12 9v4','M12 17h.01']}/>;
+    const Moon         = ({size,color}) => <SvgIcon size={size} color={color} paths={['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z']}/>;
+    const Sun          = ({size,color}) => <SvgIcon size={size} color={color} paths={['M12 1v2','M12 21v2','M4.22 4.22l1.42 1.42','M18.36 18.36l1.42 1.42','M1 12h2','M21 12h2','M4.22 19.78l1.42-1.42','M18.36 5.64l1.42-1.42']} circles={[[12,12,5]]}/>;
+    const Trophy       = ({size,color}) => <SvgIcon size={size} color={color} paths={['M8 21h8','M12 17v4','M4 6h16l-2 9a4 4 0 0 1-4 3h-4a4 4 0 0 1-4-3L4 6z','M5 6H4a2 2 0 0 0 0 4h1','M19 6h1a2 2 0 0 1 0 4h-1']}/>;
+    const Phone        = ({size,color}) => <SvgIcon size={size} color={color} paths={['M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.07 1.2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z']}/>;
+    const Flame        = ({size,color}) => <SvgIcon size={size} color={color} paths={['M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z']}/>;
+    const Zap          = ({size,color}) => <SvgIcon size={size} color={color} paths={['M13 2L3 14h9l-1 8 10-12h-9l1-8z']}/>;
+    const Check        = ({size,color}) => <SvgIcon size={size} color={color} paths={['M20 6L9 17l-5-5']}/>;
+    const Volume2      = ({size,color}) => <SvgIcon size={size} color={color} paths={['M11 5L6 9H2v6h4l5 4V5z','M19.07 4.93a10 10 0 0 1 0 14.14','M15.54 8.46a5 5 0 0 1 0 7.07']}/>;
+    const VolumeX      = ({size,color}) => <SvgIcon size={size} color={color} paths={['M11 5L6 9H2v6h4l5 4V5z','M23 9l-6 6','M17 9l6 6']}/>;
+    const Play         = ({size,color}) => <SvgIcon size={size} color={color} paths={['M5 3l14 9-14 9V3z']} filled/>;
+    const Pause        = ({size,color}) => <SvgIcon size={size} color={color} rects={[[6,4,4,16],[14,4,4,16]]} filled/>;
+    const RotateCcw    = ({size,color}) => <SvgIcon size={size} color={color} paths={['M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.16 2.3','M3 3v5h5']}/>;
+    const X            = ({size,color}) => <SvgIcon size={size} color={color} paths={['M18 6L6 18','M6 6l12 12']}/>;
 
-        // append/get elements to the DOM
-        const canvas = document.getElementById("canvas");
-        canvas.width = size; canvas.height = size;
-        ctx = canvas.getContext("2d");
-        labelContainer = document.getElementById("label-container");
-        for (let i = 0; i < maxPredictions; i++) { // and class labels
-            labelContainer.appendChild(document.createElement("div"));
-        }
+    /* ═══════════════════════════════════════════════════════════════
+       ▼▼▼  자세 이미지 URL 설정  ▼▼▼
+       각 운동의 올바른(correct)/잘못된(wrong) 자세 이미지 URL을 여기에 입력하세요.
+       예시: correct: 'https://example.com/images/heel-stretch-ok.jpg'
+             wrong:   'https://example.com/images/heel-stretch-bad.jpg'
+       URL이 비어있으면 안내 텍스트가 표시됩니다.
+    ═══════════════════════════════════════════════════════════════ */
+    const ILLUS_IMAGES = {
+
+      // 뒤꿈치 스트레칭 (heel_str)
+      heel_str: {
+        correct: 'https://www.image2url.com/r2/default/images/1778472554972-a19461d9-e9ac-45c4-9ca3-365e9bb91879.png',   // ← 올바른 자세 이미지 URL 입력
+        wrong:   'https://www.image2url.com/r2/default/images/1778472610270-e549ae1b-11e3-4245-b676-89a6ca551815.png',   // ← 잘못된 자세 이미지 URL 입력
+      },
+
+      // 앉아서 슬괴근 스트레칭 (ham_str)
+      ham_str: {
+        correct: 'https://www.image2url.com/r2/default/images/1778472684709-b59ce565-507a-4955-9bfe-8a2417da528a.png',
+        wrong:   'https://www.image2url.com/r2/default/images/1778472653537-fdafce0b-52b5-48a8-a68c-6c6b86f631b4.png',
+      },
+
+      // 엎드려 대퇴사두근 스트레칭 (prone_q)
+      prone_q: {
+        correct: 'https://www.image2url.com/r2/default/images/1778472908102-ef7202c1-b22b-4f7c-9d91-141054bd895f.png',
+        wrong:   'https://www.image2url.com/r2/default/images/1778472709006-4ea847c8-b60e-4e5a-afb0-56732fc438d1.png',
+      },
+
+      // 무릎 가슴 당기기 (ktc)
+      ktc: {
+        correct: 'https://www.image2url.com/r2/default/images/1778474990887-49d30f87-918a-4c30-ae3d-b385302a9648.png',
+        wrong:   'https://www.image2url.com/r2/default/images/1778474994515-899040f7-c460-44c3-a80b-d5d538001360.png',
+      },
+
+      // 미니 스쿼트 (msq)
+      msq: {
+        correct: 'https://www.image2url.com/r2/default/images/1778474998784-09836506-2881-4b7d-87d6-566d630c7227.png',
+        wrong:   'https://www.image2url.com/r2/default/images/1778475002935-09300381-8c3f-4004-9806-9f6a3e1c0d71.png',
+      },
+
+      // 벽 밀기 내전 (wsl)
+      wsl: {
+        correct: 'https://www.image2url.com/r2/default/images/1778475007002-e517e77c-8d19-4057-b6e5-ee700fef4547.png',
+        wrong:   'https://www.image2url.com/r2/default/images/1778475010855-6459056b-3ed5-4342-abef-f11bebd7d0ab.png',
+      },
+
+      // 런지 (lunge)
+      lunge: {
+        correct: 'https://www.image2url.com/r2/default/images/1778475014819-49049081-b008-418b-8824-2cf97a6bc7fb.png',
+        wrong:   'https://www.image2url.com/r2/default/images/1778475018920-9c490fd6-0532-4e7e-8368-f860c6129fa5.png',
+      },
+
+      // 세라밴드 상지 강화
+      lunge: {
+        correct: 'https://www.image2url.com/r2/default/images/1778475024922-89802ef8-963c-4486-a1a9-08cd75be4e72.png',
+        wrong:   'https://www.image2url.com/r2/default/images/1778475028977-c7da0792-bc1f-4de3-9e43-b3cac29f8ef4.png',
+      },
+
+    };
+    /* ══════════════════════  URL 설정 끝  ══════════════════════ */
+
+
+    /* ─── 자세 이미지 렌더 컴포넌트 ─── */
+    function PostureImageCard({ src, label, labelColor, borderColor, bgColor }) {
+      const [err, setErr] = useState(false);
+      const isEmpty = !src;
+      return (
+        <div style={{background:bgColor, border:`2px solid ${borderColor}`, borderRadius:10, padding:10, textAlign:'center'}}>
+          <div style={{fontSize:12, fontWeight:700, color:labelColor, marginBottom:6}}>{label}</div>
+          {!isEmpty && !err ? (
+            <img
+              src={src} alt={label}
+              onError={() => setErr(true)}
+              style={{width:'100%', borderRadius:8, objectFit:'cover', aspectRatio:'4/3', display:'block', background:'var(--sur2)'}}
+            />
+          ) : (
+            <div style={{
+              width:'100%', aspectRatio:'4/3', borderRadius:8, background:'var(--sur2)',
+              border:'1.5px dashed var(--bd)', display:'flex', flexDirection:'column',
+              alignItems:'center', justifyContent:'center', color:'var(--tx3)', fontSize:11, gap:4
+            }}>
+              <span style={{fontSize:22}}>🖼️</span>
+              <span>{err ? '이미지 로드 실패' : 'URL을 입력하세요'}</span>
+            </div>
+          )}
+        </div>
+      );
     }
 
-    async function loop(timestamp) {
-        webcam.update(); // update the webcam frame
-        await predict();
-        window.requestAnimationFrame(loop);
+    function PostureImages({ exId }) {
+      const imgs = ILLUS_IMAGES[exId];
+      if (!imgs) return null;
+      return (
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:15, fontWeight:700, color:'var(--tx)', marginBottom:10}}>올바른 자세 vs 잘못된 자세</div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
+            <PostureImageCard src={imgs.correct} label="✅ 올바른 자세"
+              labelColor="#166534" borderColor="var(--s)" bgColor="var(--s2)"/>
+            <PostureImageCard src={imgs.wrong} label="❌ 잘못된 자세"
+              labelColor="#7f1d1d" borderColor="var(--d)" bgColor="var(--d2)"/>
+          </div>
+        </div>
+      );
     }
 
-    async function predict() {
-        // Prediction #1: run input through posenet
-        // estimatePose can take in an image, video or canvas html element
-        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
-        // Prediction 2: run input through teachable machine classification model
-        const prediction = await model.predict(posenetOutput);
 
-        for (let i = 0; i < maxPredictions; i++) {
-            const classPrediction =
-                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
-        }
+    /* ─── 스타일 ─── */
+    const Styles = () => (
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        :root{--p:#0EA5E9;--p2:#E0F2FE;--p3:#0369A1;--s:#22C55E;--s2:#DCFCE7;--w:#F59E0B;--w2:#FEF3C7;--d:#EF4444;--d2:#FEE2E2;--bg:#F0F9FF;--sur:#FFF;--sur2:#F8FAFC;--tx:#0F172A;--tx2:#475569;--tx3:#94A3B8;--bd:#E2E8F0;--r:16px;--r2:10px}
+        [data-dark=true]{--p:#38BDF8;--p2:#0C4A6E;--p3:#7DD3FC;--s:#4ADE80;--s2:#14532D;--w:#FBD24B;--w2:#713F12;--d:#F87171;--d2:#7F1D1D;--bg:#0F172A;--sur:#1E293B;--sur2:#0F172A;--tx:#F1F5F9;--tx2:#94A3B8;--tx3:#475569;--bd:#334155}
+        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+        body,#root{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--tx)}
+        .app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+        .screen{min-height:calc(100vh - 64px);padding-bottom:80px;overflow-y:auto}
+        .card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);padding:16px}
+        .btn{font-family:inherit;font-size:15px;font-weight:500;border:none;border-radius:var(--r2);padding:12px 20px;cursor:pointer;transition:opacity .15s,transform .1s;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+        .btn:active{transform:scale(.97);opacity:.85}
+        .btn-p{background:var(--p);color:#fff}
+        .btn-s{background:var(--s);color:#fff}
+        .btn-d{background:var(--d);color:#fff}
+        .btn-g{background:transparent;color:var(--tx2);border:1px solid var(--bd)}
+        @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes confetti{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(130px) rotate(720deg);opacity:0}}
+        @keyframes praiseIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .slide{animation:slideUp .35s ease-out}
+        .fade{animation:fadeIn .3s ease-out}
+        .bounce{animation:bounce 1.5s infinite}
+        .praise{animation:praiseIn .4s ease-out}
+        ::-webkit-scrollbar{width:0}
+        input[type=range]{-webkit-appearance:none;width:100%;height:8px;border-radius:4px;outline:none;cursor:pointer;background:var(--bd)}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--p);cursor:pointer;border:3px solid var(--sur);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+        .nrs-track{background:linear-gradient(to right,#22C55E 0%,#22C55E 30%,#F59E0B 30%,#F59E0B 50%,#EF4444 50%,#EF4444 100%)}
+      `}</style>
 
-        // finally draw the poses
-        drawPose(pose);
+);
+
+/* ─── 날짜 유틸 ─── */
+const toDateStr = d => d.toISOString().split('T')[0];
+const getTodayStr = () => toDateStr(new Date());
+function getWeekDays(){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const s=new Date(t); s.setDate(t.getDate()-t.getDay());
+  return Array.from({length:7},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return d;});
+}
+
+/* ─── 칭찬 메시지 ─── */
+const PRAISE=[
+  '훌륭해요! 꾸준함이 회복의 열쇠입니다 💪',
+  '정말 잘 하셨어요! 오늘도 한 걸음 더 나아갔어요 🌟',
+  '완벽한 동작이에요! 이 노력이 빠른 회복을 만들어요 🎯',
+  '대단해요! 몸이 조금씩 더 강해지고 있어요 🏆',
+  '멋지네요! 포기하지 않는 당신이 정말 자랑스러워요 ⭐',
+  '훌륭한 운동이었어요! 계속 이 페이스로 가요 🚀',
+  '최고예요! 오늘의 노력이 내일의 회복이 됩니다 💚',
+  '잘 하셨어요! 이렇게 하루하루가 쌓여 완전한 회복이 돼요 🌈',
+  '굉장해요! 재활의 영웅이 되어가고 있어요 🦸',
+  '수고하셨어요! 한 운동씩 완주하는 당신이 대단해요 ✨',
+];
+
+/* ─── 단계별 목표 데이터 ─── */
+const PHASE_GOALS={
+  1:{
+    name:'Phase I – 병원기', period:'수술 후 1~7일', color:'#0EA5E9',
+    goals:['침대 이동 독립 수행','전륜 보행기(FWW)로 약 60m 독립 보행','가정용 운동 프로그램 독립 수행','보호자 교육 완료','퇴원 가능 상태 달성'],
+    cautions:['체중 부하 상태(WBAT·PWB·TDWB·NWB)는 의사가 결정','DVT 예방: 발목 펌프 30분마다 필수 시행','수술 부위 피부 매일 확인','통증 약물의 peak effect에 맞춰 운동 시행'],
+  },
+  2:{
+    name:'Phase II – 가정기', period:'수술 후 2~4주', color:'#22C55E',
+    goals:['고관절 굴곡 AROM 90° 달성','고관절 외전 AROM 20° 달성','무릎 굴곡 90° 달성','고관절 근력 60%·무릎 근력 70% 회복','지팡이로 가정 내 독립 보행','보호자 동반 지역사회 300m 보행'],
+    cautions:['감염 징후(발적·발열·심한 부종) 발견 시 즉시 의사 보고','봉합사/스테이플은 약 14일째 제거 — 상처 상태 관찰','트렌델렌버그 보행 발견 시 외전근 강화 집중 시행','의사 처방 체중 부하 상태 계속 준수'],
+  },
+  3:{
+    name:'Phase III – 외래기', period:'수술 후 5~8주', color:'#8B5CF6',
+    goals:['환측 고관절 완전 AROM 회복','하지 근력 75% 회복 (MMT 4-/5)','보행 패턴 정상화 (트렌델렌버그 교정)','지역사회 독립 보행 달성','심폐 기능 향상 및 일상 복귀'],
+    cautions:['보행 중 허벅지 통증·앉으면 호전 → 간헐적 파행 가능성, 의사 보고','지속적 트렌델렌버그 징후 → 둔부 신경 손상 가능성, 의사 보고','수술 부위 발적·발열·심한 부종 → 감염 가능성, 즉시 보고','전기 자극치료 시 금속 임플란트 → 반드시 의사 상의 후 적용'],
+  },
+};
+
+/* ─── 운동 데이터 ─── */
+const EX={
+  d0:[
+    {id:'spirometry',name:'유인 폐활량계',nameEn:'Incentive Spirometry',pos:'침대',reps:10,unit:'회/시간',desc:'최대한 깊게 흡기하여 폐활량계 표시기를 올립니다. 3초 유지 후 천천히 내쉽니다. 무기폐·폐렴 예방.',ok:['입술을 마우스피스에 완전히 밀착','천천히 깊게 흡기하여 표시기 올리기','3초 유지 후 천천히 내쉬기'],ng:['너무 빠르게 숨 들이마시기','표시기를 끝까지 올리지 않기'],ph:1,wk:0,icon:'🫁'},
+    {id:'ted',name:'TED 스타킹',nameEn:'TED Stockings',pos:'침대',desc:'DVT 예방을 위한 압박 스타킹. 처방에 따라 지속 착용합니다.',ph:1,wk:0,icon:'🧦',isPassive:true},
+  ],
+  d1:[
+    {id:'ankle_pumps',name:'발목 펌프',nameEn:'Ankle Pumps',pos:'침대 누운 자세',sets:3,reps:10,desc:'발목을 위아래로 반복 굴곡·신전. DVT 및 부종 예방. 30분마다 시행.',ok:['발목을 최대한 위아래로 움직임','천천히 반복'],ng:['발목만 살짝 까딱임','너무 빠르게'],ph:1,wk:1,icon:'🦶'},
+    {id:'quad_sets',name:'대퇴사두근 수축',nameEn:'Quadriceps Sets',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'다리를 펴고 허벅지 앞쪽을 조입니다. 무릎 뒤쪽을 침대에 누르고 발목을 당깁니다.',ok:['슬개골이 위로 움직임 확인','5초간 유지'],ng:['무릎이 구부러짐'],ph:1,wk:1,icon:'💪'},
+    {id:'quad_add',name:'내전근 포함 대퇴사두근 수축',nameEn:'Quad Set + Adductor Squeeze',pos:'침대 누운 자세',sets:3,reps:10,hold:10,desc:'무릎 사이에 베개를 놓고 대퇴사두근 수축과 동시에 양 무릎으로 베개를 조입니다.',ok:['베개 사이에 단단히 끼움','10초 유지'],ng:['베개 없이 시행'],ph:1,wk:1,icon:'💪'},
+    {id:'glute',name:'둔부 수축',nameEn:'Gluteal Sets',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'양쪽 엉덩이 근육을 꽉 조입니다. 5초 유지 후 이완.',ok:['엉덩이 근육을 최대한 조임','5초 유지'],ng:['한쪽만 조임'],ph:1,wk:1,icon:'💪'},
+    {id:'hamstring',name:'슬괴근 수축',nameEn:'Hamstring Sets',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'무릎을 살짝 굽히고 발꿈치로 침대 바닥을 누르며 뒤쪽 허벅지를 수축합니다.',ok:['발꿈치로 바닥을 강하게 누름','5초 유지'],ng:['발꿈치를 들어 올림'],ph:1,wk:1,icon:'🦵'},
+    {id:'hip_abd_set',name:'고관절 외전 수축',nameEn:'Hip Abduction Sets',pos:'침대 누운 자세',sets:3,reps:10,desc:'양 무릎 사이에 베개를 놓고 벌리듯이 수축합니다.',ph:1,wk:1,icon:'🦵'},
+    {id:'heel_slides',name:'무릎 굽히기',nameEn:'Heel Slides',pos:'침대 누운 자세',sets:3,reps:10,desc:'발꿈치를 바닥에 대고 무릎을 구부렸다가 펩니다.',ph:1,wk:1,icon:'🦵'},
+    {id:'pnf',name:'발목 PNF 패턴',nameEn:'Ankle PNF',pos:'침대 누운 자세',reps:10,desc:'발목을 두 대각선 방향으로 움직입니다.',ph:1,wk:1,icon:'🦶'},
+  ],
+  d2:[
+    {id:'irq',name:'내측 광근 강화',nameEn:'Inner Range Quads',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'무릎 아래에 수건을 받칩니다. 다리를 쭉 펩니다. 5초 유지.',ph:1,wk:1,icon:'💪'},
+    {id:'hipflex_ly',name:'누운 자세 고관절 굴곡',nameEn:'Hip Flexion Lying',pos:'침대 누운 자세',sets:3,reps:10,desc:'등을 대고 누워 무릎을 가슴 쪽으로 구부립니다.',ph:1,wk:1,icon:'🦵'},
+    {id:'hipabd_ly',name:'누운 자세 고관절 외전',nameEn:'Hip Abduction Lying',pos:'침대 누운 자세',sets:3,reps:10,desc:'환측 다리를 옆으로 밀어냅니다.',ph:1,wk:1,icon:'🦵'},
+    {id:'knee_ext',name:'의자 무릎 신전',nameEn:'Knee Extension Chair',pos:'의자 앉은 자세',sets:3,reps:10,hold:5,desc:'의자 깊숙이 앉아 무릎을 최대한 펴고 발목을 당깁니다.',ph:1,wk:1,icon:'💺'},
+    {id:'add_chair',name:'의자 내전 수축',nameEn:'Adduction Squeeze Chair',pos:'의자 앉은 자세',sets:3,reps:10,hold:5,desc:'무릎 사이에 쿠션을 끼우고 안쪽으로 조입니다.',ph:1,wk:1,icon:'💺'},
+  ],
+  d3:[
+    {id:'hipflex_sit',name:'앉아서 고관절 굴곡',nameEn:'Hip Flexion Sitting',pos:'의자',reps:10,hold:3,desc:'바르게 앉아 무릎을 번갈아가며 들어 올려 3초 유지합니다.',ph:1,wk:1,icon:'💺'},
+    {id:'st_hip_fl',name:'서서 고관절 굴곡',nameEn:'Standing Hip Flexion',pos:'서서',reps:10,hold:5,desc:'조리대를 잡고 무릎을 고관절 높이까지 올립니다.',ph:1,wk:1,icon:'🚶'},
+    {id:'st_hip_ab',name:'서서 고관절 외전',nameEn:'Standing Hip Abduction',pos:'서서',reps:10,hold:5,desc:'손잡이를 잡고 다리를 편 채 옆으로 들어 올립니다.',ph:1,wk:1,icon:'🚶'},
+    {id:'st_hip_ex',name:'서서 고관절 신전',nameEn:'Standing Hip Extension',pos:'서서',reps:10,hold:5,desc:'손잡이를 잡고 엉덩이를 조이면서 다리를 뒤로 들어 올립니다.',ph:1,wk:1,icon:'🚶'},
+    {id:'tiptoes',name:'양측 발뒤꿈치 올리기',nameEn:'Bilateral Tiptoes',pos:'서서',sets:3,reps:10,hold:5,desc:'보행기를 잡고 발뒤꿈치를 들어 올립니다. 5초 유지.',ph:1,wk:1,icon:'👟'},
+    {id:'ue1',name:'상지 강화',nameEn:'UE Strengthening',pos:'앉거나 서서',sets:3,reps:15,desc:'세라밴드 또는 침대 바를 이용한 상지 근력 강화.',ph:1,wk:1,icon:'💪'},
+  ],
+  w2:[
+    {id:'heel_str',name:'뒤꿈치 스트레칭',nameEn:'Heel Cord Stretch',pos:'서서',sets:3,reps:3,hold:20,desc:'환측 발을 뒤로 빼고 발끝을 약간 안쪽으로 향합니다. 양손을 벽에 대고 앞으로 기울이면서 장딴지 스트레칭. 뒤꿈치를 바닥에서 떼지 않습니다. 20초 유지.',ok:['뒤꿈치가 바닥에 완전히 밀착','발끝이 약간 안쪽을 향함','등이 곧게 펴짐','20초 유지'],ng:['발꿈치가 바닥에서 들림','무릎이 구부러짐'],ph:2,wk:2,illus:true,icon:'🧘'},
+    {id:'ham_str',name:'앉아서 슬괴근 스트레칭',nameEn:'Sitting Hamstring Stretch',pos:'앉은 자세',sets:3,reps:3,hold:20,desc:'환측 다리를 쭉 펴고 수건을 발에 걸고 등을 편 채 앞으로 숙입니다. 20초 유지.',ok:['환측 다리가 완전히 펴진 상태','등을 곧게 편 채 앞으로 숙임','당기는 느낌 확인'],ng:['허리가 구부러짐','다리가 구부러진 채 스트레칭'],ph:2,wk:2,illus:true,icon:'🧘'},
+    {id:'prone_q',name:'엎드려 대퇴사두근 스트레칭',nameEn:'Prone Quad Stretch',pos:'엎드린 자세',sets:3,reps:3,hold:20,desc:'엎드린 자세에서 무릎을 구부려 수건으로 발목을 당겨 대퇴사두근을 스트레칭합니다. 골반을 들지 않습니다.',ok:['골반이 바닥에 밀착','수건으로 발목 지지','20초 유지'],ng:['골반이 들림'],ph:2,wk:2,illus:true,icon:'🧘'},
+    {id:'ktc',name:'무릎 가슴 당기기',nameEn:'Single Knee-to-Chest',pos:'침대 누운 자세',sets:2,reps:3,desc:'비수술 측 무릎을 천천히 가슴 쪽으로 당깁니다. 요추 피로와 경직 완화.',ok:['비수술 측 무릎만 당김','천천히 부드럽게 움직임'],ng:['수술 측 무릎을 당김 — 절대 금지'],ph:2,wk:2,illus:true,icon:'🛌'},
+    {id:'msq',name:'미니 스쿼트',nameEn:'Minisquats',pos:'서서',sets:3,reps:10,desc:'조리대를 잡고 발을 어깨 너비로 섭니다. 무릎을 45도 정도 구부렸다가 선 자세로 돌아옵니다.',ok:['무릎이 발가락을 넘지 않음','등이 곧게 섬','45도만 구부림'],ng:['무릎이 발가락을 넘어감','허리가 앞으로 굽음'],ph:2,wk:2,illus:true,icon:'🏋️'},
+    {id:'wsl',name:'벽 밀기 내전',nameEn:'Wall Slides + Adductor Pillow',pos:'서서',sets:3,reps:10,hold:10,desc:'등을 벽에 대고 서서 허벅지 사이에 베개를 낍니다. 무릎을 45도로 굽히며 아래로 미끄러지면서 베개를 조입니다. 10초 유지.',ok:['등이 벽에 완전히 밀착','베개를 무릎으로 조임','10초 유지'],ng:['등이 벽에서 떨어짐','베개를 놓침'],ph:2,wk:2,illus:true,icon:'🏋️'},
+    {id:'lunge',name:'런지',nameEn:'Modified Lunges',pos:'서서',sets:1,reps:10,desc:'한 손으로 조리대를 잡고 한 발을 앞으로 내딛어 런지합니다.',ok:['조리대를 잡고 균형 유지','앞무릎이 발가락 위에 위치','등이 곧게 섬'],ng:['무릎이 안쪽으로 무너짐','몸이 앞으로 기울어짐'],ph:2,wk:2,illus:true,icon:'🚶'},
+    {id:'tb_ue',name:'세라밴드 상지 강화',nameEn:'Theraband UE Strengthening',pos:'앉거나 서서',sets:3,reps:15,desc:'탄성 밴드를 이용한 상지 근력 운동.',ok:['밴드 장력을 적절히 유지','천천히 제어하며 동작'],ng:['너무 빠르게 동작'],ph:2,wk:2,icon:'💪'},
+  ],
+  w3:[
+    {id:'sla',name:'옆으로 누워 고관절 외전',nameEn:'Side-lying Hip Abduction',pos:'옆으로 누운 자세',sets:3,reps:10,hold:5,desc:'비수술 측으로 눕고 아래 무릎을 구부립니다. 수술 측 다리를 편 채로 6~8인치 들어 올립니다. 5초 유지.',ph:2,wk:3,icon:'🦵'},
+    {id:'slad',name:'옆으로 누워 고관절 내전',nameEn:'Side-lying Hip Adduction',pos:'옆으로 누운 자세',sets:3,reps:10,hold:5,desc:'수술 측으로 눕습니다. 아래 다리를 6~8인치 들어 올려 5~10초 유지.',ph:2,wk:3,icon:'🦵'},
+  ],
+  w5:[
+    {id:'side_step',name:'옆으로 걷기',nameEn:'Side Stepping',pos:'서서',sets:5,reps:5,desc:'조리대를 잡고 왼쪽 5보, 오른쪽 5보.',ph:3,wk:5,icon:'🚶'},
+    {id:'uns',name:'비보조 서기 훈련',nameEn:'Timed Unsupported Stand',pos:'서서',desc:'보조 없이 2분 서기 목표.',ph:3,wk:5,icon:'🧍'},
+    {id:'bboard',name:'균형 보드 훈련',nameEn:'Balance Board',pos:'서서',sets:3,desc:'균형 보드 위에 서서 점차 보조를 줄여나갑니다.',ph:3,wk:5,icon:'⚖️'},
+    {id:'stairs',name:'계단 훈련',nameEn:'Stair Training',pos:'이동',desc:'올라갈 때: 비수술 측→수술 측→보조기.',ph:3,wk:5,icon:'🪜'},
+    {id:'car_tr',name:'자동차 이동 훈련',nameEn:'Car Transfer',pos:'이동',desc:'조수석을 최대한 뒤로 밀고 수술 측 다리를 편 채 천천히 앉습니다.',ph:3,wk:5,icon:'🚗'},
+    {id:'legpress',name:'레그 프레스',nameEn:'Leg Press',pos:'기구',sets:3,reps:15,desc:'무릎이 약 90도 굽혀지도록 기구를 조정합니다.',ph:3,wk:5,icon:'🏋️'},
+    {id:'trunk',name:'트렁크 안정화',nameEn:'Trunk Stabilization',pos:'엎드리기/사지',sets:3,reps:15,desc:'코어 안정화 운동.',ph:3,wk:5,icon:'💪'},
+    {id:'treadmill',name:'트레드밀 보행',nameEn:'Treadmill Walking',pos:'심폐',desc:'낮은 속도로 시작. 10~30분.',ph:3,wk:5,icon:'🏃'},
+    {id:'stepup',name:'스텝 업',nameEn:'Step-ups',pos:'서서',sets:3,reps:10,desc:'수술 측 다리로 낮은 단을 먼저 오릅니다.',ph:3,wk:5,icon:'🪜'},
+    {id:'hip_rot',name:'고관절 회전근 스트레칭',nameEn:'Hip Rotation Stretch',pos:'앉은 자세',sets:3,reps:3,hold:20,desc:'앉은 자세에서 고관절 내·외회전근 스트레칭.',ph:3,wk:5,icon:'🧘'},
+  ],
+  w7:[
+    {id:'ube',name:'상체 에르고미터',nameEn:'Upper Body Ergometer',pos:'심폐',desc:'15~30분, 점진적 증가.',ph:3,wk:7,icon:'🚴'},
+    {id:'bike',name:'고정식 자전거',nameEn:'Stationary Bicycle',pos:'심폐',desc:'저강도로 시작. 15~30분.',ph:3,wk:7,icon:'🚴'},
+    {id:'uneven',name:'불균일 지면 보행 훈련',nameEn:'Uneven Surface Walking',pos:'이동',desc:'잔디, 모래, 경사로 등 다양한 지면.',ph:3,wk:7,icon:'🚶'},
+    {id:'adv_bal',name:'단계별 균형 보드 훈련',nameEn:'Advanced Balance Board',pos:'서서',sets:3,desc:'동적 균형 훈련. 태극권도 권장.',ph:3,wk:7,icon:'⚖️'},
+  ],
+};
+
+function getExsByDay(d){
+  if(d===0)return EX.d0;if(d===1)return[...EX.d1];if(d===2)return[...EX.d1,...EX.d2];
+  if(d>=3&&d<=7)return[...EX.d1,...EX.d2,...EX.d3];if(d>=8&&d<=14)return EX.w2;
+  if(d>=15&&d<=28)return[...EX.w2,...EX.w3];if(d>=29&&d<=42)return[...EX.w2,...EX.w3,...EX.w5];
+  return[...EX.w5,...EX.w7];
+}
+function getPhase(d){return d<=7?1:d<=28?2:3}
+function dayLabel(d){if(d===0)return'수술 당일';if(d<=7)return`수술 후 ${d}일`;return`수술 후 ${Math.ceil(d/7)}주`;}
+const WEEK_GOALS={0:'호흡기 관리 및 DVT 예방',1:'침대에서 독립 이동 · 60m 보행',2:'등척성→능동 ROM 전환 · 가정 방문 PT 시작',3:'보행기→지팡이 전환 · 계단 훈련',5:'외전근 강화 · 지역사회 독립 보행',7:'심폐 기능 15~30분 · 자기 관리 전환'};
+
+/* ─── 진행률 링 ─── */
+function ProgressRing({pct,size=60,stroke=6,color}){
+  const r=(size-stroke*2)/2,c=2*Math.PI*r;
+  return(<svg width={size} height={size}><circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bd)" strokeWidth={stroke}/><circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color||'var(--p)'} strokeWidth={stroke} strokeDasharray={c} strokeDashoffset={c-((pct||0)/100)*c} style={{transform:'rotate(-90deg)',transformOrigin:'center',transition:'stroke-dashoffset 0.6s'}}/><text x={size/2} y={size/2+5} textAnchor="middle" fontSize={size/5} fontWeight="700" fill="var(--tx)">{Math.round(pct)}%</text></svg>);
+}
+
+/* ─── 타이머 ─── */
+function ExerciseTimer({holdTime,onAutoRep}){
+  const [left,setLeft]=useState(holdTime);
+  const [running,setRunning]=useState(false);
+  const [done,setDone]=useState(false);
+  const ref=useRef(null);
+  useEffect(()=>{
+    if(running&&left>0){ref.current=setInterval(()=>setLeft(l=>{if(l<=1){clearInterval(ref.current);setRunning(false);setDone(true);onAutoRep&&onAutoRep();return 0;}return l-1;}),1000);}
+    return()=>clearInterval(ref.current);
+  },[running]);
+  const reset=()=>{clearInterval(ref.current);setLeft(holdTime);setRunning(false);setDone(false);};
+  const pct=((holdTime-left)/holdTime)*100,r=44,c=2*Math.PI*r;
+  return(
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+      <svg width="112" height="112" viewBox="0 0 112 112">
+        <circle cx="56" cy="56" r={r} fill="none" stroke="var(--bd)" strokeWidth="8"/>
+        <circle cx="56" cy="56" r={r} fill="none" stroke={done?'var(--s)':'var(--p)'} strokeWidth="8" strokeDasharray={c} strokeDashoffset={c-(pct/100)*c} style={{transform:'rotate(-90deg)',transformOrigin:'center',transition:'stroke-dashoffset 0.9s linear'}}/>
+        <text x="56" y="52" textAnchor="middle" fontSize="26" fontWeight="700" fill="var(--tx)">{left}</text>
+        <text x="56" y="70" textAnchor="middle" fontSize="11" fill="var(--tx3)">초</text>
+      </svg>
+      {done?(<div style={{color:'var(--s)',fontWeight:700,fontSize:15,padding:'8px 20px',background:'var(--s2)',borderRadius:8}}>✅ 유지 완료!</div>):(
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn btn-p" style={{width:100,padding:'10px 0',fontSize:14}} onClick={()=>setRunning(r=>!r)}>{running?<Pause size={15}/>:<Play size={15}/>}{running?'일시정지':'시작'}</button>
+          <button className="btn btn-g" style={{width:44,padding:'10px 0'}} onClick={reset}><RotateCcw size={15}/></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── 운동 상세 ─── */
+function ExerciseDetail({ex,exercises,completed,onBack,onComplete}){
+  const [tab,setTab]=useState('guide');
+  const [set,setSet]=useState(0);
+  const [rep,setRep]=useState(0);
+  const [showPraise,setShowPraise]=useState(false);
+  const [praiseMsg,setPraiseMsg]=useState('');
+  const totalSets=ex.sets||1,totalReps=ex.reps||1,allSetsD=set>=totalSets;
+  const hasPostureImage=!!ILLUS_IMAGES[ex.id];
+  const isCompleted=!!completed[ex.id];
+  const currentIdx=exercises.findIndex(e=>e.id===ex.id);
+
+  const addRep=()=>{
+    if(allSetsD)return;
+    if(rep+1>=totalReps){setRep(0);setSet(s=>s+1);}else setRep(r=>r+1);
+  };
+
+  const handleMark=()=>{
+    const msg=PRAISE[Math.floor(Math.random()*PRAISE.length)];
+    setPraiseMsg(msg);
+    setShowPraise(true);
+    onComplete();
+  };
+
+  return(
+    <div className="screen slide" style={{paddingBottom:80}}>
+      {/* 헤더 */}
+      <div style={{background:'var(--p)',padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={onBack} style={{background:'rgba(255,255,255,.2)',border:'none',borderRadius:8,padding:8,cursor:'pointer',color:'#fff',display:'flex'}}><ChevronLeft size={20}/></button>
+        <div style={{flex:1}}>
+          <div style={{color:'rgba(255,255,255,.8)',fontSize:12}}>{ex.nameEn}</div>
+          <div style={{color:'#fff',fontSize:17,fontWeight:700}}>{ex.name}</div>
+        </div>
+        <div style={{background:'rgba(255,255,255,.2)',borderRadius:8,padding:'4px 10px'}}>
+          <span style={{fontSize:12,color:'#fff',fontWeight:600}}>{currentIdx+1}/{exercises.length}</span>
+        </div>
+        {isCompleted&&<CheckCircle size={22} color="#fff"/>}
+      </div>
+
+      <div style={{padding:16}}>
+        {/* 탭 */}
+        <div style={{display:'flex',background:'var(--sur2)',borderRadius:10,padding:3,marginBottom:16}}>
+          {[['guide','📋 운동 안내'],['exec','▶ 운동 실행']].map(([k,label])=>(
+            <button key={k} onClick={()=>setTab(k)} style={{flex:1,border:'none',borderRadius:8,padding:'10px 0',fontSize:13,fontWeight:600,cursor:'pointer',background:tab===k?'var(--sur)':'transparent',color:tab===k?'var(--p)':'var(--tx3)',transition:'all .2s',boxShadow:tab===k?'0 1px 3px rgba(0,0,0,.1)':'none'}}>{label}</button>
+          ))}
+        </div>
+
+        {/* 운동 안내 탭 */}
+        {tab==='guide'&&(
+          <div className="fade">
+            <div className="card" style={{marginBottom:12}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+                {[['📍 자세',ex.pos],['🔁 세트',ex.sets?`${ex.sets}세트`:'—'],['📊 횟수',ex.reps?`${ex.reps}회`:(ex.unit||'—')],['⏱ 유지',ex.hold?`${ex.hold}초`:'—']].map(([l,v])=>(
+                  <div key={l} style={{background:'var(--sur2)',borderRadius:8,padding:'8px 10px'}}>
+                    <div style={{fontSize:11,color:'var(--tx3)',marginBottom:2}}>{l}</div>
+                    <div style={{fontSize:14,fontWeight:600,color:'var(--tx)'}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{fontSize:14,color:'var(--tx2)',lineHeight:1.65}}>{ex.desc}</p>
+            </div>
+
+            {/* ── 자세 이미지 영역 (SVG 삽화 대체) ── */}
+            {hasPostureImage && <PostureImages exId={ex.id}/>}
+
+            {ex.ok&&(<div className="card" style={{marginBottom:12,border:'1.5px solid var(--s)'}}><div style={{fontSize:13,fontWeight:700,color:'var(--s)',marginBottom:8}}>✅ 올바른 동작</div>{ex.ok.map((o,i)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<ex.ok.length-1?6:0}}><Check size={14} color="var(--s)" style={{marginTop:2,flexShrink:0}}/><span style={{fontSize:13,color:'var(--tx2)'}}>{o}</span></div>)}</div>)}
+            {ex.ng&&(<div className="card" style={{border:'1.5px solid var(--d)'}}><div style={{fontSize:13,fontWeight:700,color:'var(--d)',marginBottom:8}}>⚠️ 이렇게 하지 마세요</div>{ex.ng.map((n,i)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<ex.ng.length-1?6:0}}><X size={14} color="var(--d)" style={{marginTop:2,flexShrink:0}}/><span style={{fontSize:13,color:'var(--tx2)'}}>{n}</span></div>)}</div>)}
+          </div>
+        )}
+
+        {/* 운동 실행 탭 */}
+        {tab==='exec'&&(
+          <div className="fade">
+            <div className="card" style={{marginBottom:12,textAlign:'center'}}>
+              <div style={{fontSize:13,color:'var(--tx2)',marginBottom:10,fontWeight:600}}>세트 진행</div>
+              <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:8}}>
+                {Array.from({length:totalSets}).map((_,i)=>(
+                  <div key={i} style={{width:36,height:36,borderRadius:'50%',background:i<set?'var(--s)':set===i?'var(--p)':'var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,color:i<=set?'#fff':'var(--tx3)',transition:'all .3s'}}>
+                    {i<set?'✓':i+1}
+                  </div>
+                ))}
+              </div>
+              <div style={{fontSize:13,color:'var(--tx2)'}}>{allSetsD?<span style={{color:'var(--s)',fontWeight:700}}>🎉 모든 세트 완료!</span>:<span>현재 <strong style={{color:'var(--p)'}}>{set+1}세트</strong> 진행 중</span>}</div>
+            </div>
+
+            {ex.hold&&!allSetsD&&(
+              <div className="card" style={{marginBottom:12,textAlign:'center'}}>
+                <div style={{fontSize:13,fontWeight:700,color:'var(--tx)',marginBottom:14}}>{ex.hold}초 유지 타이머</div>
+                <ExerciseTimer key={`${set}-${rep}`} holdTime={ex.hold} onAutoRep={addRep}/>
+              </div>
+            )}
+
+            {!ex.isPassive&&(
+              <div className="card" style={{marginBottom:12}}>
+                <div style={{fontSize:13,fontWeight:700,color:'var(--tx)',marginBottom:12,textAlign:'center'}}>횟수 카운터</div>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:14}}>
+                  <div style={{textAlign:'center'}}>
+                    <div style={{fontSize:52,fontWeight:900,color:'var(--p)',lineHeight:1}}>{rep}</div>
+                    <div style={{fontSize:13,color:'var(--tx3)'}}>/ {totalReps} 회</div>
+                  </div>
+                  <div style={{width:1,height:60,background:'var(--bd)'}}/>
+                  <div style={{textAlign:'center'}}>
+                    <div style={{fontSize:52,fontWeight:900,color:allSetsD?'var(--s)':'var(--tx2)',lineHeight:1}}>{set}</div>
+                    <div style={{fontSize:13,color:'var(--tx3)'}}>/ {totalSets} 세트</div>
+                  </div>
+                </div>
+                <div style={{background:'var(--bd)',borderRadius:4,height:6,marginBottom:12,overflow:'hidden'}}>
+                  <div style={{background:'var(--p)',height:6,borderRadius:4,width:`${(rep/totalReps)*100}%`,transition:'width .3s'}}/>
+                </div>
+                {!allSetsD?(
+                  <button className="btn btn-p" onClick={addRep}><Zap size={18}/> 횟수 카운트 +1 ({rep+1}/{totalReps})</button>
+                ):(
+                  <div style={{padding:12,background:'var(--s2)',borderRadius:8,textAlign:'center',color:'var(--s)',fontWeight:700}}>✅ 모든 세트 완료!</div>
+                )}
+              </div>
+            )}
+
+            {!isCompleted?(
+              <button className="btn btn-s" onClick={handleMark} style={{fontSize:15}}>
+                <CheckCircle size={18}/> 운동 완료 체크
+              </button>
+            ):(
+              <div style={{background:'var(--s2)',border:'1.5px solid var(--s)',borderRadius:12,padding:14,textAlign:'center'}}>
+                <div style={{fontSize:20,marginBottom:4}}>✅</div>
+                <div style={{fontSize:14,fontWeight:700,color:'var(--s)'}}>완료된 운동입니다</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── 단계 목표 카드 ─── */
+function PhaseGoalsCard({phase}){
+  const [open,setOpen]=useState(false);
+  const meta=PHASE_GOALS[phase];
+  if(!meta)return null;
+  return(
+    <div className="card" style={{marginBottom:14,border:`1px solid ${meta.color}40`}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',background:'none',border:'none',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',padding:0,fontFamily:'inherit'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:meta.color}}/>
+          <span style={{fontSize:14,fontWeight:700,color:'var(--tx)'}}>{meta.name} 단계 목표</span>
+          <span style={{fontSize:11,color:'var(--tx3)',background:'var(--sur2)',padding:'2px 8px',borderRadius:6}}>{meta.period}</span>
+        </div>
+        {open?<ChevronUp size={18} color="var(--tx3)"/>:<ChevronDown size={18} color="var(--tx3)"/>}
+      </button>
+      {open&&(
+        <div className="fade" style={{marginTop:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:meta.color,marginBottom:8}}>✅ 달성 목표</div>
+          {meta.goals.map((g,i)=>(
+            <div key={i} style={{display:'flex',gap:8,marginBottom:6,alignItems:'flex-start'}}>
+              <div style={{width:18,height:18,borderRadius:'50%',background:`${meta.color}20`,border:`1.5px solid ${meta.color}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
+                <Check size={10} color={meta.color}/>
+              </div>
+              <span style={{fontSize:13,color:'var(--tx2)',lineHeight:1.5}}>{g}</span>
+            </div>
+          ))}
+          <div style={{fontSize:12,fontWeight:700,color:'var(--w)',marginTop:12,marginBottom:8}}>⚠️ 주의사항</div>
+          {meta.cautions.map((c,i)=>(
+            <div key={i} style={{display:'flex',gap:8,marginBottom:5,alignItems:'flex-start'}}>
+              <span style={{color:'var(--w)',flexShrink:0,marginTop:2,fontSize:12}}>•</span>
+              <span style={{fontSize:12,color:'var(--tx2)',lineHeight:1.5}}>{c}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── 홈 화면 ─── */
+function HomeScreen({days,exercises,completed,onSelectEx,dailyNRS,praiseToast}){
+  const total=exercises.length,done=exercises.filter(e=>completed[e.id]).length;
+  const pct=total>0?(done/total)*100:0;
+  const phase=getPhase(days);
+  const wk=days<=7?0:days<=14?2:days<=28?3:days<=42?5:7;
+  return(
+    <div className="screen">
+      <div style={{background:'var(--p)',padding:'20px 16px 28px',borderBottomLeftRadius:24,borderBottomRightRadius:24}}>
+        <div style={{fontSize:12,color:'rgba(255,255,255,.8)',marginBottom:4}}>{dayLabel(days)}</div>
+        <div style={{fontSize:22,fontWeight:700,color:'#fff',marginBottom:8}}>오늘의 재활 운동</div>
+        <div style={{background:'rgba(255,255,255,.2)',borderRadius:8,padding:'6px 10px',display:'inline-block'}}>
+          <span style={{fontSize:12,color:'#fff',fontWeight:600}}>{PHASE_GOALS[phase]?.name}</span>
+        </div>
+      </div>
+      <div style={{padding:16,marginTop:-12}}>
+        {praiseToast&&(
+          <div className="praise" style={{background:'linear-gradient(135deg,var(--s2),var(--p2))',border:'1.5px solid var(--s)',borderRadius:12,padding:'12px 16px',marginBottom:14,display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:28}}>✅</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--s)',marginBottom:2}}>운동 완료!</div>
+              <div style={{fontSize:13,color:'var(--tx2)'}}>{praiseToast}</div>
+            </div>
+          </div>
+        )}
+        <div className="card" style={{display:'flex',alignItems:'center',gap:16,marginBottom:14}}>
+          <ProgressRing pct={pct} size={72} stroke={7} color={pct===100?'var(--s)':'var(--p)'}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,color:'var(--tx2)',marginBottom:4}}>오늘의 진행률</div>
+            <div style={{fontSize:20,fontWeight:700,color:'var(--tx)'}}>{done} / {total} 완료</div>
+            <div style={{background:'var(--bd)',borderRadius:4,height:6,marginTop:8}}>
+              <div style={{background:pct===100?'var(--s)':'var(--p)',borderRadius:4,height:6,width:`${pct}%`,transition:'width .6s'}}/>
+            </div>
+          </div>
+          {pct===100&&<Trophy size={28} color="var(--w)" className="bounce"/>}
+        </div>
+
+        {dailyNRS!==null&&(
+          <div style={{background:dailyNRS<4?'var(--s2)':dailyNRS<7?'var(--w2)':'var(--d2)',border:`1px solid ${dailyNRS<4?'var(--s)':dailyNRS<7?'var(--w)':'var(--d)'}`,borderRadius:10,padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:22}}>🩺</span>
+            <div>
+              <div style={{fontSize:12,color:'var(--tx2)',marginBottom:2}}>오늘의 통증 기록 (NRS)</div>
+              <div style={{fontSize:15,fontWeight:700,color:dailyNRS<4?'var(--s)':dailyNRS<7?'var(--w)':'var(--d)'}}>{dailyNRS}점 — {dailyNRS<4?'양호':dailyNRS<7?'주의 필요':'의료진 상담 필요'}</div>
+            </div>
+          </div>
+        )}
+
+        <div className="card" style={{marginBottom:14,border:'1px solid var(--p)',background:'var(--p2)'}}>
+          <div style={{fontSize:12,color:'var(--p3)',fontWeight:600,marginBottom:4}}>🎯 이번 주 목표</div>
+          <div style={{fontSize:14,fontWeight:600,color:'var(--tx)'}}>{WEEK_GOALS[wk]||'꾸준히 재활 운동을 지속하세요'}</div>
+        </div>
+
+        <PhaseGoalsCard phase={phase}/>
+
+        <div style={{fontSize:14,fontWeight:700,color:'var(--tx)',marginBottom:10}}>오늘의 운동 ({total}가지)</div>
+        {exercises.map((ex,i)=>{
+          const c=completed[ex.id];
+          const isNext=!c&&exercises.slice(0,i).every(e=>completed[e.id]);
+          return(
+            <div key={ex.id} className="card" style={{marginBottom:10,cursor:'pointer',display:'flex',alignItems:'center',gap:12,border:c?'1px solid var(--s)':isNext?'1.5px solid var(--p)':'1px solid var(--bd)',background:isNext&&!c?'var(--p2)':'var(--sur)'}} onClick={()=>onSelectEx(ex)}>
+              <div style={{fontSize:24,width:38,textAlign:'center'}}>{ex.icon}</div>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                  <span style={{fontSize:14,fontWeight:600,color:c?'var(--s)':isNext?'var(--p)':'var(--tx)'}}>{ex.name}</span>
+                  {isNext&&<span style={{fontSize:10,background:'var(--p)',color:'#fff',padding:'1px 6px',borderRadius:4,fontWeight:600}}>다음</span>}
+                </div>
+                <div style={{fontSize:12,color:'var(--tx3)'}}>{ex.pos}{ex.sets?` · ${ex.sets}세트`:''}{ex.reps?` · ${ex.reps}회`:''}{ex.hold?` · ${ex.hold}초 유지`:''}</div>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                {c?<CheckCircle size={22} color="var(--s)"/>:<Circle size={22} color={isNext?'var(--p)':'var(--tx3)'}/>}
+                <ChevronRight size={16} color="var(--tx3)"/>
+              </div>
+            </div>
+          );
+        })}
+
+        <div style={{background:'var(--w2)',border:'1px solid var(--w)',borderRadius:12,padding:14,marginTop:4}}>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}><AlertTriangle size={16} color="var(--w)"/><span style={{fontSize:13,fontWeight:700,color:'#92400E'}}>운동 전 주의사항</span></div>
+          <div style={{fontSize:12,color:'#78350F',lineHeight:1.6}}>• 통증 NRS 4점 이상 시 운동 중단 후 의료진 상담<br/>• DVT 예방: 발목 펌프 30분마다 시행<br/>• 수술 부위 피부 매일 확인<br/>• 전문의와 상의 후 운동하세요</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── NRS 화면 ─── */
+function NRSDailyCheck({onConfirm}){
+  const [nrs,setNrs]=useState(0);
+  const nrsColor=nrs<4?'var(--s)':nrs<7?'var(--w)':'var(--d)';
+  const dots=Array.from({length:16},(_,i)=>({x:Math.random()*100,color:['#0EA5E9','#22C55E','#F59E0B','#EF4444','#8B5CF6'][i%5],delay:Math.random()*0.6,size:Math.random()*10+5}));
+  return(
+    <div className="screen slide" style={{paddingBottom:80,position:'relative',overflow:'hidden'}}>
+      {dots.map((d,i)=><div key={i} style={{position:'absolute',left:`${d.x}%`,top:0,width:d.size,height:d.size,background:d.color,borderRadius:2,animation:`confetti 2s ease-in ${d.delay}s both`,pointerEvents:'none'}}/>)}
+      <div style={{background:'var(--s)',padding:'24px 16px 32px',borderBottomLeftRadius:24,borderBottomRightRadius:24,textAlign:'center'}}>
+        <div style={{fontSize:52,marginBottom:8}}>🏆</div>
+        <div style={{fontSize:20,fontWeight:700,color:'#fff',marginBottom:6}}>오늘의 운동 모두 완료!</div>
+        <div style={{fontSize:14,color:'rgba(255,255,255,.85)'}}>정말 잘 하셨어요! 꾸준함이 회복의 열쇠입니다.</div>
+      </div>
+      <div style={{padding:16}}>
+        <div className="card" style={{marginBottom:14}}>
+          <h3 style={{fontSize:16,fontWeight:700,marginBottom:6,color:'var(--tx)'}}>📊 오늘의 통증 기록 (NRS)</h3>
+          <p style={{fontSize:13,color:'var(--tx2)',marginBottom:16,lineHeight:1.6}}>오늘 운동 중 느꼈던 최대 통증 강도를 기록해 주세요.<br/>이 기록은 하루에 한 번만 저장됩니다.</p>
+          <div style={{textAlign:'center',marginBottom:14}}>
+            <span style={{fontSize:64,fontWeight:900,color:nrsColor,lineHeight:1}}>{nrs}</span>
+            <span style={{fontSize:18,color:'var(--tx2)'}}>/10</span>
+          </div>
+          <input type="range" min="0" max="10" step="1" value={nrs} onChange={e=>setNrs(+e.target.value)} className="nrs-track" style={{marginBottom:8}}/>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--tx3)',marginBottom:16}}><span>0 통증 없음</span><span>5 중등도</span><span>10 극심</span></div>
+          <div style={{background:nrs<4?'var(--s2)':nrs<7?'var(--w2)':'var(--d2)',border:`1.5px solid ${nrsColor}`,borderRadius:10,padding:12}}>
+            <div style={{fontWeight:700,color:nrsColor,fontSize:14,marginBottom:3}}>
+              {nrs<4?'✅ 양호':nrs<7?'⚠️ 주의 필요':'🚫 의료진 상담 필요'}
+            </div>
+            <div style={{fontSize:13,color:'var(--tx2)'}}>{nrs<4?'통증이 없거나 경미합니다. 내일도 운동을 지속하세요.':nrs<7?'통증이 중등도입니다. 전문의와 상의 후 다음 운동을 계획하세요.':'심한 통증이 발생했습니다. 즉시 의료진에게 알려주세요.'}</div>
+          </div>
+        </div>
+        {nrs>=4&&(<button className="btn btn-d" style={{marginBottom:12}} onClick={()=>alert('간호사 호출 기능\n실제 앱에서는 병동 호출 시스템과 연동됩니다.')}><Phone size={18}/> 간호사 호출 (원터치)</button>)}
+        <div style={{fontSize:12,color:'var(--d)',textAlign:'center',marginBottom:16,fontWeight:600}}>전문의와 상의 후 운동하세요</div>
+        <button className="btn btn-p" onClick={()=>onConfirm(nrs)} style={{fontSize:15}}><Check size={18}/> 통증 기록 완료 및 홈으로</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── 주간 바 차트 ─── */
+function WeeklyBarChart({completionHistory,todayExTotal}){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayStr=getTodayStr();
+  const weekDays=getWeekDays();
+  const dayNames=['일','월','화','수','목','금','토'];
+  const W=320,H=110,barW=30,gap=(W-barW*7)/6;
+  const data=weekDays.map((d,i)=>{
+    const str=toDateStr(d);
+    const isFuture=d>today&&str!==todayStr;
+    const isToday=str===todayStr;
+    const hist=completionHistory[str];
+    const done=hist?.done||0;
+    const total=isToday?(hist?.total||todayExTotal):hist?.total||0;
+    const pct=total>0?done/total:0;
+    return{str,done,total,pct,isFuture,isToday,dayName:dayNames[i]};
+  });
+  const maxTotal=Math.max(...data.map(d=>d.total),1);
+  return(
+    <div>
+      <svg width="100%" viewBox={`0 0 ${W+40} ${H+50}`} style={{display:'block'}}>
+        {[0.25,0.5,0.75,1].map(v=><line key={v} x1="28" y1={H-v*H} x2={W+28} y2={H-v*H} stroke="var(--bd)" strokeWidth="0.8" strokeDasharray="4"/>)}
+        {data.map(({done,total,pct,isFuture,isToday,dayName},i)=>{
+          const x=28+i*(barW+gap);
+          const bh=Math.max(pct*H,total>0?4:0);
+          const fill=isFuture||!total?'transparent':pct>=1?'var(--s)':isToday?'var(--p)':'#94A3B8';
+          return(
+            <g key={dayName}>
+              <rect x={x} y={0} width={barW} height={H} rx={6} fill={isFuture?'#F1F5F9':'var(--sur2)'}/>
+              {!isFuture&&total>0&&<rect x={x} y={H-bh} width={barW} height={bh} rx={Math.min(bh,6)} fill={fill}/>}
+              {!isFuture&&total>0&&done>0&&<text x={x+barW/2} y={H-bh-6} textAnchor="middle" fontSize="9" fontWeight="700" fill={fill}>{done}</text>}
+              <text x={x+barW/2} y={H+18} textAnchor="middle" fontSize="13" fontWeight={isToday?'700':'400'} fill={isToday?'var(--p)':'var(--tx3)'}>{dayName}</text>
+              {isToday&&<circle cx={x+barW/2} cy={H+30} r="3" fill="var(--p)"/>}
+              {!isFuture&&total>0&&<text x={x+barW/2} y={H+44} textAnchor="middle" fontSize="9" fill="var(--tx3)">{total}</text>}
+            </g>
+          );
+        })}
+        {[0,Math.round(maxTotal/2),maxTotal].map((v,i)=><text key={i} x="22" y={H-(v/maxTotal)*H+4} textAnchor="end" fontSize="9" fill="var(--tx3)">{v}</text>)}
+      </svg>
+      <div style={{display:'flex',gap:12,padding:'2px 8px 6px',flexWrap:'wrap'}}>
+        {[{c:'var(--s)',l:'달성'},{c:'var(--p)',l:'오늘'},{c:'#94A3B8',l:'진행 중'}].map(({c,l})=>(
+          <div key={l} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'var(--tx2)'}}>
+            <div style={{width:10,height:10,borderRadius:2,background:c}}/>{l}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── 기록 화면 ─── */
+function ProgressScreen({completionHistory,days,exercises,dailyNRS}){
+  const phase=getPhase(days),weeks=Math.floor(days/7);
+  const todayHist=completionHistory[getTodayStr()];
+  return(
+    <div className="screen slide" style={{padding:'20px 16px 80px'}}>
+      <h2 style={{fontSize:20,fontWeight:700,marginBottom:16,color:'var(--tx)'}}>📊 재활 기록</h2>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+        {[{label:'수술 후 경과',val:`${days}일`,icon:'📅'},{label:'현재 단계',val:`Phase ${phase}`,icon:'🏥'},{label:'오늘 완료',val:`${todayHist?.done||0}/${todayHist?.total||exercises.length}`,icon:'✅'},{label:'오늘 통증',val:dailyNRS!==null?`NRS ${dailyNRS}점`:'미기록',icon:'🩺'}].map(({label,val,icon})=>(
+          <div key={label} style={{background:'var(--sur)',border:'1px solid var(--bd)',borderRadius:12,padding:'14px 12px'}}>
+            <div style={{fontSize:20,marginBottom:4}}>{icon}</div>
+            <div style={{fontSize:12,color:'var(--tx3)',marginBottom:2}}>{label}</div>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--tx)'}}>{val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="card" style={{marginBottom:14}}>
+        <div style={{fontSize:14,fontWeight:700,marginBottom:4,color:'var(--tx)'}}>이번 주 운동 현황</div>
+        <div style={{fontSize:12,color:'var(--tx3)',marginBottom:12}}>{new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} 기준</div>
+        <WeeklyBarChart completionHistory={completionHistory} todayExTotal={exercises.length}/>
+      </div>
+      {[1,2,3].map(ph=><PhaseGoalsCard key={ph} phase={ph}/>)}
+    </div>
+  );
+}
+
+/* ─── 설정 화면 ─── */
+function SettingsScreen({dark,setDark,fontSize,setFontSize,notif,setNotif,surgeryDate,setSurgeryDate}){
+  const [mute,setMute]=useState(false);
+  const [avatar,setAvatar]=useState(0);
+  return(
+    <div className="screen slide" style={{padding:'20px 16px 80px'}}>
+      <h2 style={{fontSize:20,fontWeight:700,marginBottom:16,color:'var(--tx)'}}>⚙️ 설정</h2>
+      <div className="card" style={{marginBottom:14}}><div style={{fontSize:14,fontWeight:700,marginBottom:10,color:'var(--tx)'}}>📅 수술 날짜 변경</div><input type="date" value={surgeryDate} onChange={e=>setSurgeryDate(e.target.value)} max={new Date().toISOString().split('T')[0]} style={{width:'100%',padding:'10px 12px',border:'1px solid var(--bd)',borderRadius:8,fontSize:14,background:'var(--sur)',color:'var(--tx)',fontFamily:'inherit'}}/></div>
+      <div className="card" style={{marginBottom:14}}>
+        <div style={{fontSize:14,fontWeight:700,marginBottom:12,color:'var(--tx)'}}>🎨 테마 설정</div>
+        <div style={{display:'flex',gap:10,marginBottom:14}}>
+          {[{k:false,label:'밝은 테마',icon:<Sun size={16}/>},{k:true,label:'어두운 테마',icon:<Moon size={16}/>}].map(({k,label,icon})=>(
+            <button key={String(k)} onClick={()=>setDark(k)} style={{flex:1,padding:10,border:`1.5px solid ${dark===k?'var(--p)':'var(--bd)'}`,borderRadius:8,background:dark===k?'var(--p2)':'var(--sur)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,color:dark===k?'var(--p)':'var(--tx2)',fontWeight:600,fontSize:13}}>{icon}{label}</button>
+          ))}
+        </div>
+        <div style={{fontSize:13,fontWeight:600,color:'var(--tx2)',marginBottom:8}}>글자 크기</div>
+        <div style={{display:'flex',gap:8}}>
+          {['작게','보통','크게'].map((s,i)=><button key={s} onClick={()=>setFontSize(i)} style={{flex:1,padding:'8px 0',border:`1.5px solid ${fontSize===i?'var(--p)':'var(--bd)'}`,borderRadius:8,background:fontSize===i?'var(--p2)':'var(--sur)',cursor:'pointer',fontSize:[12,14,16][i],color:fontSize===i?'var(--p)':'var(--tx2)',fontWeight:600}}>{s}</button>)}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:14}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <span style={{fontSize:14,fontWeight:700,color:'var(--tx)'}}>🔔 알림 설정</span>
+          <button onClick={()=>setNotif(!notif)} style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',background:notif?'var(--p)':'var(--bd)',transition:'background .2s',position:'relative'}}><div style={{width:18,height:18,borderRadius:'50%',background:'#fff',position:'absolute',top:3,left:notif?22:3,transition:'left .2s'}}/></button>
+        </div>
+        {notif&&['오전 10:00','오후 2:00','오후 7:00'].map(t=>(
+          <div key={t} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:'1px solid var(--bd)'}}><span style={{fontSize:13,color:'var(--tx)'}}>{t}</span><span style={{fontSize:11,background:'var(--p2)',color:'var(--p3)',padding:'3px 8px',borderRadius:6,fontWeight:600}}>활성</span></div>
+        ))}
+        {notif&&<button onClick={()=>setMute(m=>!m)} style={{display:'flex',gap:8,alignItems:'center',background:'transparent',border:'1px solid var(--bd)',borderRadius:8,padding:'8px 12px',cursor:'pointer',color:'var(--tx2)',fontSize:13,marginTop:10}}>{mute?<VolumeX size={16}/>:<Volume2 size={16}/>}{mute?'무음 모드 켜짐':'무음 모드 끄기'}</button>}
+      </div>
+      <div className="card" style={{marginBottom:14}}>
+        <div style={{fontSize:14,fontWeight:700,marginBottom:12,color:'var(--tx)'}}>🛡️ 안전 도구</div>
+        <button className="btn btn-d" style={{marginBottom:8}} onClick={()=>alert('간호사 호출 기능\n실제 앱에서는 병동 호출 시스템과 연동됩니다.')}><Phone size={18}/> 간호사 호출 (원터치)</button>
+        <p style={{fontSize:11,color:'var(--d)',textAlign:'center',fontWeight:600}}>전문의와 상의 후 운동하세요</p>
+      </div>
+      <div className="card"><div style={{fontSize:14,fontWeight:700,marginBottom:12,color:'var(--tx)'}}>👤 내 캐릭터</div><div style={{display:'flex',gap:10,flexWrap:'wrap'}}>{['🧑‍⚕️','👴','👵','🧑','👦','🦸'].map((em,i)=><button key={i} onClick={()=>setAvatar(i)} style={{width:52,height:52,fontSize:28,border:`2px solid ${avatar===i?'var(--p)':'var(--bd)'}`,borderRadius:12,background:avatar===i?'var(--p2)':'var(--sur2)',cursor:'pointer'}}>{em}</button>)}</div></div>
+    </div>
+  );
+}
+
+/* ─── 전체 운동 목록 ─── */
+function AllExercisesScreen({onSelect}){
+  const phases=[{title:'Phase I – 병원기 (1~7일)',exs:[...EX.d0,...EX.d1,...EX.d2,...EX.d3],c:'#0EA5E9'},{title:'Phase II – 2주차 (중점)',exs:EX.w2,c:'#22C55E'},{title:'Phase II – 3~4주차',exs:EX.w3,c:'#16A34A'},{title:'Phase III – 5~6주차',exs:EX.w5,c:'#8B5CF6'},{title:'Phase III – 7~8주차',exs:EX.w7,c:'#7C3AED'}];
+  return(
+    <div className="screen slide" style={{padding:'16px 16px 80px'}}>
+      <h2 style={{fontSize:20,fontWeight:700,marginBottom:16,color:'var(--tx)'}}>💪 전체 운동 목록</h2>
+      {phases.map(({title,exs,c})=>(
+        <div key={title} style={{marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:700,color:c,background:`${c}18`,borderRadius:8,padding:'6px 12px',marginBottom:8}}>{title}</div>
+          {exs.map(ex=>(
+            <div key={ex.id} className="card" style={{marginBottom:8,cursor:'pointer',display:'flex',alignItems:'center',gap:10}} onClick={()=>onSelect(ex)}>
+              <span style={{fontSize:22}}>{ex.icon}</span>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{ex.name}</div><div style={{fontSize:11,color:'var(--tx3)'}}>{ex.pos}{ex.sets?` · ${ex.sets}세트`:''}{ex.reps?` · ${ex.reps}회`:''}{ex.hold?` · ${ex.hold}초`:''}</div></div>
+              <ChevronRight size={14} color="var(--tx3)"/>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── 온보딩 ─── */
+function OnboardingScreen({onConfirm}){
+  const [date,setDate]=useState('');
+  return(
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'var(--bg)'}}>
+      <div style={{fontSize:68,marginBottom:12,textAlign:'center'}}>🦴</div>
+      <h1 style={{fontSize:24,fontWeight:700,color:'var(--tx)',textAlign:'center',marginBottom:6}}>고관절 재활 도우미</h1>
+      <p style={{fontSize:13,color:'var(--tx2)',textAlign:'center',marginBottom:24,lineHeight:1.7,maxWidth:300}}>
+        수술 후 체계적인 재활 운동을 도와드립니다.<br/>수술 날짜를 입력하면 D+N일 기준으로<br/>맞춤 운동을 안내해 드려요.
+      </p>
+      <div style={{background:'var(--sur)',border:'1px solid var(--bd)',borderRadius:12,padding:14,marginBottom:20,maxWidth:360,width:'100%'}}>
+        <div style={{fontSize:11,color:'var(--p3)',fontWeight:700,marginBottom:6}}>📚 참고 문헌</div>
+        <p style={{fontSize:11,color:'var(--tx2)',lineHeight:1.7}}>
+          본 가이드는 <strong>Gray et al., Open Reduction and Internal Fixation of the Hip (Chap. 21)</strong> 및{' '}
+          <strong>York and Scarborough Teaching Hospitals NHS Foundation Trust (PIL1724v1, 2025)</strong>를 기반으로 작성되었습니다.
+        </p>
+        <p style={{fontSize:11,color:'var(--d)',fontWeight:600,marginTop:8}}>
+          ⚠️ 모든 운동은 담당 의사 및 물리치료사의 지시에 따라 시행하십시오.
+        </p>
+      </div>
+      <div className="card" style={{width:'100%',maxWidth:360}}>
+        <label style={{fontSize:14,fontWeight:600,color:'var(--tx)',display:'block',marginBottom:8}}>수술 날짜 입력</label>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} max={new Date().toISOString().split('T')[0]}
+          style={{width:'100%',padding:'12px 14px',border:'1.5px solid var(--p)',borderRadius:10,fontSize:15,marginBottom:16,background:'var(--sur)',color:'var(--tx)',fontFamily:'inherit'}}/>
+        <button className="btn btn-p" disabled={!date} onClick={()=>onConfirm(date)} style={{opacity:date?1:0.5}}>
+          <Flame size={18}/> 재활 시작하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── 하단 네비게이션 ─── */
+function BottomNav({tab,setTab}){
+  const items=[{k:'home',label:'홈',icon:<Home size={22}/>},{k:'exercises',label:'운동',icon:<Dumbbell size={22}/>},{k:'progress',label:'기록',icon:<BarChart2 size={22}/>},{k:'settings',label:'설정',icon:<Settings size={22}/>}];
+  return(
+    <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'var(--sur)',borderTop:'1px solid var(--bd)',display:'flex',zIndex:100}}>
+      {items.map(({k,label,icon})=>(
+        <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:'10px 0 8px',border:'none',background:'transparent',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,color:tab===k?'var(--p)':'var(--tx3)',fontFamily:'inherit',fontSize:11,fontWeight:tab===k?700:400,transition:'color .2s'}}>
+          {icon}{label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── 메인 앱 ─── */
+function App(){
+  const [surgeryDate,setSurgeryDate]=useState('');
+  const [dark,setDark]=useState(false);
+  const [fontSize,setFontSize]=useState(1);
+  const [tab,setTab]=useState('home');
+  const [selectedEx,setSelectedEx]=useState(null);
+  const [completed,setCompleted]=useState({});
+  const [notif,setNotif]=useState(true);
+  const [showNRS,setShowNRS]=useState(false);
+  const [dailyNRS,setDailyNRS]=useState(null);
+  const [completionHistory,setCompletionHistory]=useState({});
+  const [praiseToast,setPraiseToast]=useState('');
+
+  const days=surgeryDate?Math.max(0,Math.floor((Date.now()-new Date(surgeryDate).getTime())/86400000)):0;
+  const exercises=getExsByDay(days);
+
+  const handleComplete=(id)=>{
+    const newCompleted={...completed,[id]:true};
+    setCompleted(newCompleted);
+    const done=exercises.filter(e=>newCompleted[e.id]).length;
+    setCompletionHistory(h=>({...h,[getTodayStr()]:{done,total:exercises.length}}));
+    const msg=PRAISE[Math.floor(Math.random()*PRAISE.length)];
+    setPraiseToast(msg);
+    setTimeout(()=>setPraiseToast(''),3500);
+    if(done>=exercises.length){
+      setSelectedEx(null);
+      setTimeout(()=>setShowNRS(true),100);
+    } else {
+      setSelectedEx(null);
     }
+  };
 
-    function drawPose(pose) {
-        if (webcam.canvas) {
-            ctx.drawImage(webcam.canvas, 0, 0);
-            // draw the keypoints and skeleton
-            if (pose) {
-                const minPartConfidence = 0.5;
-                tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
-                tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
-            }
-        }
-    }
-</script>
+  if(!surgeryDate) return(
+    <div className="app" data-dark={String(dark)}><Styles/><OnboardingScreen onConfirm={d=>setSurgeryDate(d)}/></div>
+  );
 
+  return(
+    <div className="app" data-dark={String(dark)} style={{fontSize:[14,16,18][fontSize]}}>
+      <Styles/>
+      {showNRS&&(
+        <div style={{position:'fixed',inset:0,zIndex:200,background:'var(--bg)',maxWidth:430,margin:'0 auto'}}>
+          <NRSDailyCheck onConfirm={score=>{setDailyNRS(score);setShowNRS(false);setTab('home');}}/>
+        </div>
+      )}
+      {selectedEx&&!showNRS?(
+        <ExerciseDetail
+          ex={selectedEx}
+          exercises={exercises}
+          completed={completed}
+          onBack={()=>setSelectedEx(null)}
+          onComplete={()=>handleComplete(selectedEx.id)}
+        />
+      ):(
+        <>
+          {tab==='home'&&<HomeScreen days={days} exercises={exercises} completed={completed} onSelectEx={setSelectedEx} dailyNRS={dailyNRS} praiseToast={praiseToast}/>}
+          {tab==='exercises'&&<AllExercisesScreen onSelect={setSelectedEx}/>}
+          {tab==='progress'&&<ProgressScreen completionHistory={completionHistory} days={days} exercises={exercises} dailyNRS={dailyNRS}/>}
+          {tab==='settings'&&<SettingsScreen dark={dark} setDark={setDark} fontSize={fontSize} setFontSize={setFontSize} notif={notif} setNotif={setNotif} surgeryDate={surgeryDate} setSurgeryDate={setSurgeryDate}/>}
+          {!showNRS&&<BottomNav tab={tab} setTab={setTab}/>}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ─── 마운트 ─── */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+
+  </script>
 </body>
 </html>
