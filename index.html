@@ -1,907 +1,1366 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <title>고관절 재활 도우미</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"/>
-</head>
-<body style="margin:0;padding:0;background:#F0F9FF;">
-  <div id="root"></div>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎣 잡아라 월척!</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Jua','Malgun Gothic',sans-serif;}
+body{display:flex;align-items:center;justify-content:center;background:#0d1b2a;}
+.screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;}
+.screen.active{display:flex;}
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+/* ── 타이틀 ── */
+#screen-title{background:linear-gradient(180deg,#0a1628 0%,#0d2a4a 60%,#1a4a7a 100%);overflow:hidden;}
+#title-bg{position:absolute;inset:0;z-index:0;}
+.title-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px;}
+.title-logo{font-size:68px;color:#fff;text-shadow:4px 4px 0 #0a2a4a,0 0 40px rgba(80,180,255,0.6);
+  animation:titleBob 2.5s ease-in-out infinite;text-align:center;line-height:1.1;}
+.title-sub{font-size:20px;color:#7ec8e3;letter-spacing:2px;text-align:center;}
+.btn-title-start{padding:18px 60px;font-family:'Jua',sans-serif;font-size:30px;border:none;
+  border-radius:40px;background:linear-gradient(135deg,#FF6B9D,#ff8c42);color:#fff;cursor:pointer;
+  box-shadow:0 6px 0 #b03060,0 10px 30px rgba(255,107,157,0.5);transition:all 0.15s;
+  animation:btnPulse 2s ease-in-out infinite;}
+@keyframes btnPulse{0%,100%{box-shadow:0 6px 0 #b03060,0 10px 30px rgba(255,107,157,0.5)}50%{box-shadow:0 6px 0 #b03060,0 10px 40px rgba(255,107,157,0.8)}}
+.btn-title-start:hover{transform:translateY(-3px);}
+@keyframes titleBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+/* ── 로그인 ── */
+#screen-login{background:linear-gradient(180deg,#0a1628 0%,#0d2a4a 60%,#1a4a7a 100%);}
+.login-title{font-size:42px;color:#fff;text-shadow:3px 3px 0 #0a2a4a;margin-bottom:4px;text-align:center;}
+.login-box{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);
+  border-radius:20px;padding:28px 36px;display:flex;flex-direction:column;gap:12px;
+  backdrop-filter:blur(16px);width:320px;}
+.login-box h2{font-size:26px;color:#fff;text-align:center;margin-bottom:4px;}
+.login-input{padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.1);color:#fff;font-size:18px;font-family:'Jua',sans-serif;outline:none;}
+.login-input::placeholder{color:rgba(255,255,255,0.4);}
+.login-input:focus{border-color:rgba(80,180,255,0.6);}
+.btn-primary{padding:12px;border:none;border-radius:10px;font-family:'Jua',sans-serif;
+  font-size:22px;cursor:pointer;background:linear-gradient(135deg,#2196F3,#1565C0);color:#fff;
+  box-shadow:0 4px 0 #0d47a1;transition:all 0.15s;}
+.btn-primary:hover{transform:translateY(-2px);}
+.login-toggle{font-size:16px;color:rgba(255,255,255,0.45);text-align:center;cursor:pointer;text-decoration:underline;}
+.login-toggle:hover{color:#7ec8e3;}
+.login-err{color:#ff6b6b;font-size:16px;text-align:center;display:none;}
+.login-guest{font-size:16px;color:rgba(255,255,255,0.35);text-align:center;cursor:pointer;text-decoration:underline;}
+.login-guest:hover{color:#7ec8e3;}
 
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+/* ── 캐릭터 선택 ── */
+#screen-select{overflow:hidden;}
+#select-bg{position:absolute;inset:0;z-index:0;}
+#profile-badge{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:5px 12px;
+  color:#fff;font-size:16px;cursor:pointer;z-index:10;}
+.sel-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.sel-title{font-size:40px;color:#fff;text-shadow:2px 2px 0 #0a2a4a;}
+.sel-sub{font-size:18px;color:#7ec8e3;margin-top:-6px;}
+.penguin-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;}
+.penguin-card{width:104px;height:128px;background:rgba(255,255,255,0.93);
+  border-radius:18px;border:3px solid transparent;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  transition:all 0.18s;box-shadow:0 4px 16px rgba(0,0,0,0.25);position:relative;}
+.penguin-card:hover{transform:translateY(-5px) scale(1.05);}
+.penguin-card.selected{border-color:#4fc3f7;box-shadow:0 0 0 3px rgba(79,195,247,0.4),0 6px 20px rgba(0,0,0,0.2);transform:translateY(-5px) scale(1.07);}
+.penguin-card canvas{width:76px;height:80px;}
+.penguin-label{font-size:15px;color:#444;font-weight:bold;text-align:center;line-height:1.3;}
+.check-badge{position:absolute;top:5px;right:5px;width:22px;height:22px;
+  background:#4fc3f7;border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:14px;}
+.penguin-card.selected .check-badge{display:flex;}
+.record-panel{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+  border-radius:14px;padding:10px 22px;color:#fff;font-size:18px;text-align:center;}
+.record-panel span{color:#FFD700;font-size:20px;}
+.start-btn{padding:14px 48px;font-family:'Jua',sans-serif;font-size:26px;border:none;
+  border-radius:32px;background:linear-gradient(135deg,#FF6B9D,#ff8c42);color:#fff;
+  cursor:pointer;box-shadow:0 5px 0 #b03060;transition:all 0.15s;}
+.start-btn:hover{transform:translateY(-2px);}
+.start-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
 
-  <script type="text/babel">
-    const { useState, useRef, useEffect } = React;
+/* ── 게임 ── */
+#screen-game{background:#000;overflow:hidden;}
+#game-canvas-wrap{position:relative;width:960px;height:580px;}
+#gameCanvas{display:block;border-radius:12px;}
 
-    /* ─────────────────────────────────────────────────────────────
-       아이콘 컴포넌트 (Lucide 아이콘 SVG 대체)
-    ───────────────────────────────────────────────────────────── */
-    function SvgIcon({ size=24, color='currentColor', paths=[], circles=[], rects=[], filled=false, strokeWidth=2 }) {
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24"
-          fill={filled ? color : 'none'}
-          stroke={filled ? 'none' : color}
-          strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-          {circles.map(([cx,cy,r],i) => <circle key={i} cx={cx} cy={cy} r={r}/>)}
-          {rects.map(([x,y,w,h,rx],i) => <rect key={i} x={x} y={y} width={w} height={h} rx={rx||0}/>)}
-          {paths.map((d,i) => <path key={i} d={d}/>)}
-        </svg>
-      );
-    }
-    const Home       = ({size,color}) => <SvgIcon size={size} color={color} paths={['M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z','M9 22V12h6v10']}/>;
-    const Dumbbell   = ({size,color}) => <SvgIcon size={size} color={color} paths={['M6.5 6.5h11','M6.5 17.5h11','M3 5h3v14H3z','M18 5h3v14h-3z']}/>;
-    const BarChart2  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M18 20V10','M12 20V4','M6 20v-6']}/>;
-    const Settings   = ({size,color}) => <SvgIcon size={size} color={color} paths={['M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z']} circles={[[12,12,3]]}/>;
-    const ChevronRight = ({size,color}) => <SvgIcon size={size} color={color} paths={['M9 18l6-6-6-6']}/>;
-    const ChevronLeft  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M15 18l-6-6 6-6']}/>;
-    const ChevronDown  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M6 9l6 6 6-6']}/>;
-    const ChevronUp    = ({size,color}) => <SvgIcon size={size} color={color} paths={['M18 15l-6-6-6 6']}/>;
-    const CheckCircle  = ({size,color}) => <SvgIcon size={size} color={color} paths={['M22 11.08V12a10 10 0 1 1-5.93-9.14','M22 4L12 14.01l-3-3']}/>;
-    const Circle       = ({size,color}) => <SvgIcon size={size} color={color} circles={[[12,12,10]]}/>;
-    const AlertTriangle= ({size,color}) => <SvgIcon size={size} color={color} paths={['M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z','M12 9v4','M12 17h.01']}/>;
-    const Moon         = ({size,color}) => <SvgIcon size={size} color={color} paths={['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z']}/>;
-    const Sun          = ({size,color}) => <SvgIcon size={size} color={color} paths={['M12 1v2','M12 21v2','M4.22 4.22l1.42 1.42','M18.36 18.36l1.42 1.42','M1 12h2','M21 12h2','M4.22 19.78l1.42-1.42','M18.36 5.64l1.42-1.42']} circles={[[12,12,5]]}/>;
-    const Trophy       = ({size,color}) => <SvgIcon size={size} color={color} paths={['M8 21h8','M12 17v4','M4 6h16l-2 9a4 4 0 0 1-4 3h-4a4 4 0 0 1-4-3L4 6z','M5 6H4a2 2 0 0 0 0 4h1','M19 6h1a2 2 0 0 1 0 4h-1']}/>;
-    const Phone        = ({size,color}) => <SvgIcon size={size} color={color} paths={['M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.07 1.2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z']}/>;
-    const Flame        = ({size,color}) => <SvgIcon size={size} color={color} paths={['M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z']}/>;
-    const Zap          = ({size,color}) => <SvgIcon size={size} color={color} paths={['M13 2L3 14h9l-1 8 10-12h-9l1-8z']}/>;
-    const Check        = ({size,color}) => <SvgIcon size={size} color={color} paths={['M20 6L9 17l-5-5']}/>;
-    const Volume2      = ({size,color}) => <SvgIcon size={size} color={color} paths={['M11 5L6 9H2v6h4l5 4V5z','M19.07 4.93a10 10 0 0 1 0 14.14','M15.54 8.46a5 5 0 0 1 0 7.07']}/>;
-    const VolumeX      = ({size,color}) => <SvgIcon size={size} color={color} paths={['M11 5L6 9H2v6h4l5 4V5z','M23 9l-6 6','M17 9l6 6']}/>;
-    const Play         = ({size,color}) => <SvgIcon size={size} color={color} paths={['M5 3l14 9-14 9V3z']} filled/>;
-    const Pause        = ({size,color}) => <SvgIcon size={size} color={color} rects={[[6,4,4,16],[14,4,4,16]]} filled/>;
-    const RotateCcw    = ({size,color}) => <SvgIcon size={size} color={color} paths={['M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.16 2.3','M3 3v5h5']}/>;
-    const X            = ({size,color}) => <SvgIcon size={size} color={color} paths={['M18 6L6 18','M6 6l12 12']}/>;
-
-    /* ═══════════════════════════════════════════════════════════════
-       ▼▼▼  자세 이미지 URL 설정  ▼▼▼
-       각 운동의 올바른(correct)/잘못된(wrong) 자세 이미지 URL을 여기에 입력하세요.
-       예시: correct: 'https://example.com/images/heel-stretch-ok.jpg'
-             wrong:   'https://example.com/images/heel-stretch-bad.jpg'
-       URL이 비어있으면 안내 텍스트가 표시됩니다.
-    ═══════════════════════════════════════════════════════════════ */
-    const ILLUS_IMAGES = {
-
-      // 뒤꿈치 스트레칭 (heel_str)
-      heel_str: {
-        correct: 'https://www.image2url.com/r2/default/images/1778472554972-a19461d9-e9ac-45c4-9ca3-365e9bb91879.png',   // ← 올바른 자세 이미지 URL 입력
-        wrong:   'https://www.image2url.com/r2/default/images/1778472610270-e549ae1b-11e3-4245-b676-89a6ca551815.png',   // ← 잘못된 자세 이미지 URL 입력
-      },
-
-      // 앉아서 슬괴근 스트레칭 (ham_str)
-      ham_str: {
-        correct: 'https://www.image2url.com/r2/default/images/1778472684709-b59ce565-507a-4955-9bfe-8a2417da528a.png',
-        wrong:   'https://www.image2url.com/r2/default/images/1778472653537-fdafce0b-52b5-48a8-a68c-6c6b86f631b4.png',
-      },
-
-      // 엎드려 대퇴사두근 스트레칭 (prone_q)
-      prone_q: {
-        correct: 'https://www.image2url.com/r2/default/images/1778472908102-ef7202c1-b22b-4f7c-9d91-141054bd895f.png',
-        wrong:   'https://www.image2url.com/r2/default/images/1778472709006-4ea847c8-b60e-4e5a-afb0-56732fc438d1.png',
-      },
-
-      // 무릎 가슴 당기기 (ktc)
-      ktc: {
-        correct: 'https://www.image2url.com/r2/default/images/1778474990887-49d30f87-918a-4c30-ae3d-b385302a9648.png',
-        wrong:   'https://www.image2url.com/r2/default/images/1778474994515-899040f7-c460-44c3-a80b-d5d538001360.png',
-      },
-
-      // 미니 스쿼트 (msq)
-      msq: {
-        correct: 'https://www.image2url.com/r2/default/images/1778474998784-09836506-2881-4b7d-87d6-566d630c7227.png',
-        wrong:   'https://www.image2url.com/r2/default/images/1778475002935-09300381-8c3f-4004-9806-9f6a3e1c0d71.png',
-      },
-
-      // 벽 밀기 내전 (wsl)
-      wsl: {
-        correct: 'https://www.image2url.com/r2/default/images/1778475007002-e517e77c-8d19-4057-b6e5-ee700fef4547.png',
-        wrong:   'https://www.image2url.com/r2/default/images/1778475010855-6459056b-3ed5-4342-abef-f11bebd7d0ab.png',
-      },
-
-      // 런지 (lunge)
-      lunge: {
-        correct: 'https://www.image2url.com/r2/default/images/1778475014819-49049081-b008-418b-8824-2cf97a6bc7fb.png',
-        wrong:   'https://www.image2url.com/r2/default/images/1778475018920-9c490fd6-0532-4e7e-8368-f860c6129fa5.png',
-      },
-
-      // 세라밴드 상지 강화
-      lunge: {
-        correct: 'https://www.image2url.com/r2/default/images/1778475024922-89802ef8-963c-4486-a1a9-08cd75be4e72.png',
-        wrong:   'https://www.image2url.com/r2/default/images/1778475028977-c7da0792-bc1f-4de3-9e43-b3cac29f8ef4.png',
-      },
-
-    };
-    /* ══════════════════════  URL 설정 끝  ══════════════════════ */
-
-
-    /* ─── 자세 이미지 렌더 컴포넌트 ─── */
-    function PostureImageCard({ src, label, labelColor, borderColor, bgColor }) {
-      const [err, setErr] = useState(false);
-      const isEmpty = !src;
-      return (
-        <div style={{background:bgColor, border:`2px solid ${borderColor}`, borderRadius:10, padding:10, textAlign:'center'}}>
-          <div style={{fontSize:12, fontWeight:700, color:labelColor, marginBottom:6}}>{label}</div>
-          {!isEmpty && !err ? (
-            <img
-              src={src} alt={label}
-              onError={() => setErr(true)}
-              style={{width:'100%', borderRadius:8, objectFit:'cover', aspectRatio:'4/3', display:'block', background:'var(--sur2)'}}
-            />
-          ) : (
-            <div style={{
-              width:'100%', aspectRatio:'4/3', borderRadius:8, background:'var(--sur2)',
-              border:'1.5px dashed var(--bd)', display:'flex', flexDirection:'column',
-              alignItems:'center', justifyContent:'center', color:'var(--tx3)', fontSize:11, gap:4
-            }}>
-              <span style={{fontSize:22}}>🖼️</span>
-              <span>{err ? '이미지 로드 실패' : 'URL을 입력하세요'}</span>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    function PostureImages({ exId }) {
-      const imgs = ILLUS_IMAGES[exId];
-      if (!imgs) return null;
-      return (
-        <div style={{marginBottom:12}}>
-          <div style={{fontSize:15, fontWeight:700, color:'var(--tx)', marginBottom:10}}>올바른 자세 vs 잘못된 자세</div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
-            <PostureImageCard src={imgs.correct} label="✅ 올바른 자세"
-              labelColor="#166534" borderColor="var(--s)" bgColor="var(--s2)"/>
-            <PostureImageCard src={imgs.wrong} label="❌ 잘못된 자세"
-              labelColor="#7f1d1d" borderColor="var(--d)" bgColor="var(--d2)"/>
-          </div>
-        </div>
-      );
-    }
-
-
-    /* ─── 스타일 ─── */
-    const Styles = () => (
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-        :root{--p:#0EA5E9;--p2:#E0F2FE;--p3:#0369A1;--s:#22C55E;--s2:#DCFCE7;--w:#F59E0B;--w2:#FEF3C7;--d:#EF4444;--d2:#FEE2E2;--bg:#F0F9FF;--sur:#FFF;--sur2:#F8FAFC;--tx:#0F172A;--tx2:#475569;--tx3:#94A3B8;--bd:#E2E8F0;--r:16px;--r2:10px}
-        [data-dark=true]{--p:#38BDF8;--p2:#0C4A6E;--p3:#7DD3FC;--s:#4ADE80;--s2:#14532D;--w:#FBD24B;--w2:#713F12;--d:#F87171;--d2:#7F1D1D;--bg:#0F172A;--sur:#1E293B;--sur2:#0F172A;--tx:#F1F5F9;--tx2:#94A3B8;--tx3:#475569;--bd:#334155}
-        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-        body,#root{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--tx)}
-        .app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
-        .screen{min-height:calc(100vh - 64px);padding-bottom:80px;overflow-y:auto}
-        .card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);padding:16px}
-        .btn{font-family:inherit;font-size:15px;font-weight:500;border:none;border-radius:var(--r2);padding:12px 20px;cursor:pointer;transition:opacity .15s,transform .1s;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
-        .btn:active{transform:scale(.97);opacity:.85}
-        .btn-p{background:var(--p);color:#fff}
-        .btn-s{background:var(--s);color:#fff}
-        .btn-d{background:var(--d);color:#fff}
-        .btn-g{background:transparent;color:var(--tx2);border:1px solid var(--bd)}
-        @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        @keyframes confetti{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(130px) rotate(720deg);opacity:0}}
-        @keyframes praiseIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
-        .slide{animation:slideUp .35s ease-out}
-        .fade{animation:fadeIn .3s ease-out}
-        .bounce{animation:bounce 1.5s infinite}
-        .praise{animation:praiseIn .4s ease-out}
-        ::-webkit-scrollbar{width:0}
-        input[type=range]{-webkit-appearance:none;width:100%;height:8px;border-radius:4px;outline:none;cursor:pointer;background:var(--bd)}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--p);cursor:pointer;border:3px solid var(--sur);box-shadow:0 1px 4px rgba(0,0,0,.25)}
-        .nrs-track{background:linear-gradient(to right,#22C55E 0%,#22C55E 30%,#F59E0B 30%,#F59E0B 50%,#EF4444 50%,#EF4444 100%)}
-      `}</style>
-
-);
-
-/* ─── 날짜 유틸 ─── */
-const toDateStr = d => d.toISOString().split('T')[0];
-const getTodayStr = () => toDateStr(new Date());
-function getWeekDays(){
-  const t=new Date(); t.setHours(0,0,0,0);
-  const s=new Date(t); s.setDate(t.getDate()-t.getDay());
-  return Array.from({length:7},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return d;});
+#game-canvas-wrap{
+  box-shadow: 0 0 0 2px rgba(79,195,247,0.4), 0 0 40px rgba(0,30,60,0.8);
 }
 
-/* ─── 칭찬 메시지 ─── */
-const PRAISE=[
-  '훌륭해요! 꾸준함이 회복의 열쇠입니다 💪',
-  '정말 잘 하셨어요! 오늘도 한 걸음 더 나아갔어요 🌟',
-  '완벽한 동작이에요! 이 노력이 빠른 회복을 만들어요 🎯',
-  '대단해요! 몸이 조금씩 더 강해지고 있어요 🏆',
-  '멋지네요! 포기하지 않는 당신이 정말 자랑스러워요 ⭐',
-  '훌륭한 운동이었어요! 계속 이 페이스로 가요 🚀',
-  '최고예요! 오늘의 노력이 내일의 회복이 됩니다 💚',
-  '잘 하셨어요! 이렇게 하루하루가 쌓여 완전한 회복이 돼요 🌈',
-  '굉장해요! 재활의 영웅이 되어가고 있어요 🦸',
-  '수고하셨어요! 한 운동씩 완주하는 당신이 대단해요 ✨',
+/* 카메라 패널 */
+#cam-panel{position:absolute;bottom:8px;right:8px;background:rgba(10,25,50,0.92);
+  border-radius:16px;padding:10px;border:1px solid rgba(79,195,247,0.5);z-index:10;
+  display:flex;flex-direction:column;align-items:center;gap:5px;}
+#camCanvas{border-radius:10px;width:168px;height:168px;}
+#cam-status{font-size:15px;color:#7ec8e3;text-align:center;}
+#pose-labels div{font-size:15px;padding:3px 7px;border-radius:6px;background:rgba(255,255,255,0.05);
+  margin-bottom:2px;text-align:center;transition:all 0.2s;width:168px;color:#aaa;}
+#pose-labels div.active{background:rgba(255,107,157,0.3);color:#FF6B9D;font-weight:bold;}
+#action-badge{padding:5px 10px;border-radius:10px;font-size:16px;font-weight:bold;
+  text-align:center;width:168px;transition:all 0.3s;}
+#action-badge.rest{background:rgba(79,195,247,0.2);color:#4fc3f7;}
+#action-badge.squat{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;
+  animation:badgePop 0.4s infinite alternate;}
+@keyframes badgePop{from{box-shadow:0 0 4px #f093fb}to{box-shadow:0 0 18px #f5576c}}
+.mini-gauge{width:168px;display:flex;flex-direction:column;gap:2px;}
+.mg-label{font-size:15px;color:#7ec8e3;display:flex;justify-content:space-between;}
+.mg-bg{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;}
+.mg-fill{height:100%;border-radius:4px;transition:width 0.1s linear;}
+#fight-mf{background:linear-gradient(90deg,#f093fb,#f5576c);}
+
+/* 카운트다운 */
+#cd-overlay{position:absolute;inset:0;border-radius:12px;display:none;
+  align-items:center;justify-content:center;flex-direction:column;
+  background:rgba(0,15,35,0.85);backdrop-filter:blur(5px);z-index:20;gap:10px;}
+#cd-num{font-size:140px;color:#FFD700;text-shadow:0 0 30px #FFD700,4px 4px 0 #7a5000;
+  animation:cdPop 0.65s ease-out;line-height:1;}
+@keyframes cdPop{0%{transform:scale(0.2) rotate(-10deg);opacity:0}65%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+#cd-msg{font-size:28px;color:#fff;text-align:center;max-width:440px;line-height:1.6;}
+#cd-warning{font-size:20px;color:#FF6B9D;margin-top:6px;text-align:center;
+  background:rgba(255,107,157,0.12);border:1px solid rgba(255,107,157,0.3);
+  border-radius:10px;padding:8px 16px;max-width:420px;}
+
+/* 게임오버 */
+#go-overlay{position:absolute;inset:0;border-radius:12px;display:none;
+  align-items:center;justify-content:center;flex-direction:column;
+  background:rgba(0,15,35,0.95);backdrop-filter:blur(14px);z-index:20;gap:0;}
+.go-header{font-size:48px;color:#FFD700;text-shadow:3px 3px 0 #7a5000;margin-bottom:8px;animation:titleBob 2s ease-in-out infinite;}
+.go-result-box{background:rgba(255,255,255,0.07);border:1px solid rgba(255,215,0,0.3);border-radius:20px;padding:18px 32px;margin-bottom:12px;min-width:420px;text-align:center;}
+.go-score-main{font-size:68px;color:#FFD700;text-shadow:0 0 20px rgba(255,215,0,0.6);line-height:1.1;}
+.go-rank-badge{font-size:26px;color:#43e97b;margin-top:4px;}
+.go-stats{display:flex;justify-content:center;gap:28px;margin-top:12px;font-size:18px;color:#ccc;}
+.go-stat-item{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.go-stat-val{font-size:28px;color:#4fc3f7;}
+.go-lb-box{background:rgba(255,255,255,0.05);border:1px solid rgba(79,195,247,0.25);border-radius:16px;padding:10px;min-width:420px;margin-bottom:12px;}
+.go-lb-title{font-size:20px;color:#FFD700;text-align:center;margin-bottom:8px;}
+.lb-table{width:100%;}
+.lb-row{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:16px;color:#ccc;border-radius:8px;}
+.lb-row.me{background:rgba(79,195,247,0.15);color:#4fc3f7;font-weight:bold;}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank-num{width:32px;font-size:20px;font-weight:bold;color:#FFD700;}
+.go-row{display:flex;gap:10px;margin-top:4px;}
+.go-btn{padding:11px 24px;font-family:'Jua',sans-serif;font-size:20px;border:none;border-radius:24px;cursor:pointer;transition:all 0.15s;}
+.go-btn.green{background:linear-gradient(135deg,#43e97b,#38f9d7);color:#0a2a18;box-shadow:0 4px 0 #1a8a50;}
+.go-btn.pink{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;box-shadow:0 4px 0 #9a1540;}
+.go-btn.gold{background:linear-gradient(135deg,#FFD700,#ff9a00);color:#3a1a00;box-shadow:0 4px 0 #9a6000;}
+.go-btn:hover{transform:translateY(-2px);}
+
+#lb-standalone-overlay{position:absolute;inset:0;border-radius:12px;display:none;
+  align-items:center;justify-content:center;flex-direction:column;
+  background:rgba(0,15,35,0.92);backdrop-filter:blur(10px);z-index:21;gap:8px;}
+.lb-standalone-table{background:rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;width:380px;}
+#kb-hint{position:absolute;bottom:5px;left:8px;font-size:15px;color:rgba(255,255,255,0.5);z-index:5;}
+
+/* 이펙트 오버레이 */
+#effect-overlay{position:absolute;inset:0;pointer-events:none;z-index:15;border-radius:12px;}
+
+@keyframes goFadeIn{
+  0%{opacity:0;transform:scale(0.5);}
+  60%{opacity:1;transform:scale(1.15);}
+  100%{opacity:1;transform:scale(1);}
+}
+@keyframes goFadeOut{
+  0%{opacity:1;transform:scale(1);}
+  100%{opacity:0;transform:scale(1.3);}
+}
+#go-popup{
+  position:absolute;inset:0;border-radius:12px;
+  display:none;align-items:center;justify-content:center;
+  pointer-events:none;z-index:25;
+}
+#go-popup-text{
+  font-size:160px;color:#FFD700;
+  text-shadow:6px 6px 0 #7a5000, 0 0 60px rgba(255,215,0,0.8);
+  font-family:'Jua',sans-serif;
+  letter-spacing:-4px;
+}
+#go-popup.show{
+  display:flex;
+  animation:goFadeIn 0.5s ease-out forwards;
+}
+#go-popup.hide{
+  display:flex;
+  animation:goFadeOut 0.4s ease-in forwards;
+}
+</style>
+</head>
+<body>
+
+<div id="screen-title" class="screen active">
+  <canvas id="title-bg"></canvas>
+  <div class="title-content">
+    <div class="title-logo">🎣 잡아라 월척!</div>
+    <div class="title-sub">미니 스쿼트 재활 낚시 게임 🐧</div>
+    <canvas id="title-penguin" width="180" height="200"></canvas>
+    <button class="btn-title-start" onclick="clickSound();showScreen('screen-login')">🐧 시작하기!</button>
+  </div>
+</div>
+
+<div id="screen-login" class="screen">
+  <div class="login-title">🎣 잡아라 월척!</div><br>
+  <div class="login-box" id="login-form">
+    <h2>🐧 로그인</h2>
+    <input class="login-input" id="login-id" placeholder="아이디 (닉네임)" maxlength="12">
+    <input class="login-input" id="login-pw" type="password" placeholder="비밀번호">
+    <div class="login-err" id="login-err"></div>
+    <button class="btn-primary" onclick="clickSound();doLogin()">🎣 로그인</button>
+    <div class="login-toggle" onclick="clickSound();showRegister()">처음이세요? → 회원가입</div>
+    <div class="login-guest" onclick="clickSound();doGuest()">👤 비회원으로 시작하기</div>
+  </div>
+  <div class="login-box" id="register-form" style="display:none">
+    <h2>🐧 회원가입</h2>
+    <input class="login-input" id="reg-id" placeholder="닉네임 (최대 12자)" maxlength="12">
+    <input class="login-input" id="reg-pw" type="password" placeholder="비밀번호 (4자 이상)">
+    <input class="login-input" id="reg-pw2" type="password" placeholder="비밀번호 확인">
+    <div class="login-err" id="reg-err"></div>
+    <button class="btn-primary" onclick="clickSound();doRegister()">✨ 가입하기</button>
+    <div class="login-toggle" onclick="clickSound();showLogin()">이미 계정이 있어요 → 로그인</div>
+  </div>
+</div>
+
+<div id="screen-select" class="screen">
+  <canvas id="select-bg"></canvas>
+  <div id="profile-badge" onclick="clickSound();doLogout()">🐧 <span id="profile-name"></span> | 로그아웃</div>
+  <div class="sel-content">
+    <div class="sel-title">🐧 내 펭귄 고르기</div>
+    <div class="sel-sub">함께 낚시할 펭귄을 골라주세요!</div>
+    <div class="penguin-grid" id="penguin-grid"></div>
+    <div class="record-panel" id="record-panel" style="display:none">
+      🏆 최고: <span id="best-score-disp">0</span>점 &nbsp;|&nbsp; 총 <span id="total-fish-disp">0</span>마리 &nbsp;|&nbsp; Lv.<span id="user-level">1</span>
+      &nbsp;<button onclick="clickSound();showLBStandalone()" style="background:rgba(255,215,0,0.2);border:1px solid rgba(255,215,0,0.4);color:#FFD700;border-radius:8px;padding:3px 10px;font-family:Jua;font-size:16px;cursor:pointer;">🏅 순위</button>
+    </div>
+    <button class="start-btn" id="sel-start-btn" onclick="clickSound();goToGame()" disabled>🎣 낚시 시작!</button>
+  </div>
+</div>
+
+<div id="screen-game" class="screen">
+  <div id="game-canvas-wrap">
+    <canvas id="gameCanvas" width="960" height="580"></canvas>
+    <canvas id="effect-overlay" width="960" height="580"></canvas>
+
+    <div id="cam-panel">
+      <div style="font-size:16px;color:#FF6B9D;font-weight:bold">📷 모션 인식</div>
+      <canvas id="camCanvas" width="168" height="168"></canvas>
+      <div id="pose-labels"></div>
+      <div id="action-badge" class="rest">🧍 준비 자세</div>
+      <div class="mini-gauge">
+        <div class="mg-label"><span>🏋️</span><span id="fight-txt">대기</span></div>
+        <div class="mg-bg"><div class="mg-fill" id="fight-mf" style="width:0%"></div></div>
+      </div>
+      <div id="cam-status">카메라 연결 중...</div>
+    </div>
+
+    <div id="cd-overlay">
+      <div id="cd-num">3</div>
+      <div id="cd-msg">준비하세요!</div>
+      <div id="cd-warning">⚠️ 의자나 조리대를 잡고 옆으로 서주세요!</div>
+    </div>
+
+    <div id="go-overlay">
+      <div class="go-header">🎣 낚시 종료!</div>
+      <div class="go-result-box">
+        <div class="go-score-main" id="go-score-txt">0점</div>
+        <div class="go-rank-badge" id="go-rank-txt"></div>
+        <div class="go-stats">
+          <div class="go-stat-item"><div class="go-stat-val" id="go-fish-cnt">0</div><div>마리</div></div>
+          <div class="go-stat-item"><div class="go-stat-val" id="go-level">1</div><div>레벨</div></div>
+          <div class="go-stat-item"><div class="go-stat-val" id="go-best">0</div><div>최고점</div></div>
+        </div>
+      </div>
+      <div class="go-lb-box">
+        <div class="go-lb-title">🏅 명예의 전당 TOP 8</div>
+        <div class="lb-table" id="go-lb-table"></div>
+      </div>
+      <div class="go-row">
+        <button class="go-btn green" onclick="clickSound();beginCountdown()">🔄 다시 도전!</button>
+        <button class="go-btn pink" onclick="clickSound();goSelectScreen()">🐧 캐릭터 변경</button>
+        <button class="go-btn gold" onclick="clickSound();showLBStandalone()">🏅 전체 순위</button>
+      </div>
+    </div>
+
+    <div id="go-popup">
+      <div id="go-popup-text">GO!</div>
+    </div>
+
+    <div id="lb-standalone-overlay">
+      <div style="font-size:28px;color:#FFD700;font-weight:bold">🏅 명예의 전당</div>
+      <div class="lb-standalone-table" id="lb-standalone-table"></div>
+      <button class="go-btn pink" onclick="clickSound();closeLBStandalone()" style="margin-top:8px">닫기</button>
+    </div>
+    <div id="kb-hint">스페이스: 스쿼트 자세 | 카메라: class2(스쿼트) 자세일 때 낚시 발동!</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+<script>
+'use strict';
+
+/* ═══ 클릭/효과음 ═══ */
+let AC=null;
+function getAC(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}return AC;}
+
+function clickSound(){
+  try{
+    const ac=getAC();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);
+    o.type='sine';o.frequency.setValueAtTime(880,ac.currentTime);o.frequency.exponentialRampToValueAtTime(440,ac.currentTime+0.07);
+    g.gain.setValueAtTime(0.18,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.08);
+    o.start();o.stop(ac.currentTime+0.09);
+  }catch(e){}
+}
+
+function ohYeahSound(){
+  try{
+    const ac=getAC();
+    const freqs=[440,554,659,880];
+    freqs.forEach((f,i)=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.connect(g);g.connect(ac.destination);
+      o.type='triangle';o.frequency.value=f;
+      const t=ac.currentTime+i*0.07;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.18,t+0.025);g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+      o.start(t);o.stop(t+0.2);
+    });
+    const bufSz=ac.sampleRate*0.15;
+    const buf=ac.createBuffer(1,bufSz,ac.sampleRate);
+    const d=buf.getChannelData(0);for(let j=0;j<bufSz;j++)d[j]=(Math.random()*2-1)*0.4;
+    const src=ac.createBufferSource();src.buffer=buf;
+    const hf=ac.createBiquadFilter();hf.type='highpass';hf.frequency.value=7000;
+    src.connect(hf);const hg=ac.createGain();hf.connect(hg);hg.connect(ac.destination);
+    hg.gain.setValueAtTime(0.06,ac.currentTime+0.21);hg.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.35);
+    src.start(ac.currentTime+0.21);src.stop(ac.currentTime+0.36);
+  }catch(e){}
+}
+
+function bigCatchSound(){
+  try{
+    const ac=getAC();
+    [[0,523],[0.05,659],[0.10,784],[0.15,1047],[0.22,880],[0.28,1047]].forEach(([delay,f])=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.connect(g);g.connect(ac.destination);
+      o.type='triangle';o.frequency.value=f;
+      const t=ac.currentTime+delay;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.15,t+0.02);g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+      o.start(t);o.stop(t+0.24);
+    });
+  }catch(e){}
+}
+
+/* ═══ 음성 합성 ═══ */
+function speak(txt,rate=1.2,pitch=1.3){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang='ko-KR';u.rate=rate;u.pitch=pitch;u.volume=1.0;
+  const voices=window.speechSynthesis.getVoices();
+  const koVoice=voices.find(v=>v.lang.startsWith('ko')&&v.name.includes('Male'))||voices.find(v=>v.lang.startsWith('ko'));
+  if(koVoice)u.voice=koVoice;
+  window.speechSynthesis.speak(u);
+}
+function speakAnime(txt){speak(txt,1.3,1.5);}
+function speakExcited(txt){speak(txt,1.4,1.6);}
+
+/* ═══ DB / 유저 ═══ */
+function loadDB(){try{return JSON.parse(localStorage.getItem('woljuck_v5')||'{}')}catch(e){return{}}}
+function saveDB(db){localStorage.setItem('woljuck_v5',JSON.stringify(db));}
+let currentUser=null;
+function calcLevel(tf){return Math.floor(Math.sqrt((tf||0)/3))+1;}
+
+function doLogin(){
+  const id=document.getElementById('login-id').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  if(!id||!pw){showErr('login-err','아이디와 비밀번호를 입력하세요!');return;}
+  const db=loadDB();
+  if(!db[id]||db[id].pw!==pw){showErr('login-err','아이디 또는 비밀번호가 틀렸어요!');return;}
+  currentUser=db[id];afterLogin();
+}
+function doRegister(){
+  const id=document.getElementById('reg-id').value.trim();
+  const pw=document.getElementById('reg-pw').value;
+  const pw2=document.getElementById('reg-pw2').value;
+  if(!id){showErr('reg-err','닉네임을 입력하세요!');return;}
+  if(pw.length<4){showErr('reg-err','비밀번호는 4자 이상이어야 해요!');return;}
+  if(pw!==pw2){showErr('reg-err','비밀번호가 일치하지 않아요!');return;}
+  const db=loadDB();
+  if(db[id]){showErr('reg-err','이미 사용 중인 닉네임이에요!');return;}
+  currentUser={id,pw,bestScore:0,totalFish:0,penguin:null,records:[]};
+  db[id]=currentUser;saveDB(db);afterLogin();
+}
+function doGuest(){currentUser={id:'게스트',pw:'',bestScore:0,totalFish:0,penguin:null,records:[],guest:true};afterLogin();}
+function doLogout(){currentUser=null;selectedPenguin=null;document.getElementById('profile-badge').style.display='none';document.getElementById('sel-start-btn').disabled=true;showScreen('screen-login');}
+function afterLogin(){
+  document.getElementById('profile-name').textContent=currentUser.id;
+  document.getElementById('profile-badge').style.display='block';
+  selectedPenguin=currentUser.penguin||null;
+  buildSelectUI();updateSelectUI();showScreen('screen-select');
+  speakAnime('어서오세요! 낚시왕이 되어볼까요?');
+}
+function saveProgress(){
+  if(!currentUser||currentUser.guest)return;
+  const db=loadDB();db[currentUser.id]=currentUser;saveDB(db);
+}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3000);}
+function showLogin(){document.getElementById('login-form').style.display='flex';document.getElementById('register-form').style.display='none';}
+function showRegister(){document.getElementById('login-form').style.display='none';document.getElementById('register-form').style.display='flex';}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+/* ═══ 순위 ═══ */
+function buildLBRows(container,highlightId){
+  const db=loadDB();
+  const lb=Object.values(db).sort((a,b)=>(b.bestScore||0)-(a.bestScore||0)).slice(0,8);
+  container.innerHTML='';
+  if(!lb.length){container.innerHTML='<div class="lb-row" style="justify-content:center;color:#888">아직 기록이 없어요!</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  lb.forEach((u,i)=>{
+    const isMe=highlightId&&u.id===highlightId;
+    const row=document.createElement('div');row.className='lb-row'+(isMe?' me':'');
+    row.innerHTML=`<div class="lb-rank-num">${medals[i]||'#'+(i+1)}</div><div style="flex:1">${u.id}</div><div style="color:#FFD700">${u.bestScore||0}점</div><div style="color:#43e97b;margin-left:6px">${u.totalFish||0}마리</div>`;
+    container.appendChild(row);
+  });
+}
+function showLBStandalone(){
+  buildLBRows(document.getElementById('lb-standalone-table'),currentUser?.id);
+  document.getElementById('lb-standalone-overlay').style.display='flex';
+}
+function closeLBStandalone(){document.getElementById('lb-standalone-overlay').style.display='none';}
+
+/* ═══ 펭귄 드로잉 ═══ */
+const PENGUINS=[
+  {id:'normal',  name:'순둥이 핑핑'},
+  {id:'happy',   name:'신난 핑핑'},
+  {id:'cool',    name:'쿨가이 핑핑'},
+  {id:'sleepy',  name:'졸린 핑핑'},
+  {id:'angry',   name:'화난 핑핑'},
+  {id:'bandage', name:'붕대 핑핑'},
+  {id:'star',    name:'스타 핑핑'},
+];
+let selectedPenguin=null;
+
+function drawPenguin(ctx,pid,cx,cy,r,opts={}){
+  const{celebrate=false,sweat=false,fishing=false}=opts;
+  ctx.save();
+  ctx.save();ctx.globalAlpha=0.18;ctx.fillStyle='#000';
+  ctx.beginPath();ctx.ellipse(cx+r*0.06,cy+r*0.9,r*0.55,r*0.12,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  const bodyShade=ctx.createRadialGradient(cx-r*0.15,cy,r*0.1,cx,cy+r*0.1,r*0.75);
+  bodyShade.addColorStop(0,'#2a2a3e');bodyShade.addColorStop(0.6,'#16162a');bodyShade.addColorStop(1,'#0d0d1c');
+  ctx.fillStyle=bodyShade;ctx.beginPath();ctx.ellipse(cx,cy+r*0.18,r*0.56,r*0.70,0,0,Math.PI*2);ctx.fill();
+  const belly=ctx.createRadialGradient(cx-r*0.05,cy+r*0.1,r*0.02,cx,cy+r*0.25,r*0.46);
+  belly.addColorStop(0,'#fff9e8');belly.addColorStop(0.5,'#f5edd0');belly.addColorStop(1,'#e8ddb8');
+  ctx.fillStyle=belly;ctx.beginPath();ctx.ellipse(cx,cy+r*0.26,r*0.36,r*0.50,0,0,Math.PI*2);ctx.fill();
+  const wingGrad=(side)=>{const wg=ctx.createLinearGradient(cx+side*r*0.3,cy,cx+side*r*0.65,cy+r*0.3);wg.addColorStop(0,'#1e1e32');wg.addColorStop(1,'#111120');return wg;};
+  if(celebrate){
+    [-1,1].forEach(s=>{ctx.save();ctx.translate(cx+s*r*0.56,cy-r*0.05);ctx.rotate(s*(-0.8));ctx.fillStyle=wingGrad(s);ctx.beginPath();ctx.ellipse(0,0,r*0.17,r*0.40,0,0,Math.PI*2);ctx.fill();ctx.restore();});
+  }else if(fishing){
+    ctx.save();ctx.translate(cx-r*0.54,cy+r*0.12);ctx.rotate(0.12);ctx.fillStyle=wingGrad(-1);ctx.beginPath();ctx.ellipse(0,0,r*0.16,r*0.38,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save();ctx.translate(cx+r*0.54,cy-r*0.06);ctx.rotate(-0.5);ctx.fillStyle=wingGrad(1);ctx.beginPath();ctx.ellipse(0,0,r*0.16,r*0.38,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  }else{
+    [-1,1].forEach(s=>{ctx.save();ctx.translate(cx+s*r*0.54,cy+r*0.14);ctx.rotate(s*0.15);ctx.fillStyle=wingGrad(s);ctx.beginPath();ctx.ellipse(0,0,r*0.16,r*0.38,0,0,Math.PI*2);ctx.fill();ctx.restore();});
+  }
+  const headGrad=ctx.createRadialGradient(cx-r*0.14,cy-r*0.48,r*0.04,cx,cy-r*0.32,r*0.50);
+  headGrad.addColorStop(0,'#2e2e48');headGrad.addColorStop(0.55,'#1a1a2e');headGrad.addColorStop(1,'#0e0e20');
+  ctx.fillStyle=headGrad;ctx.beginPath();ctx.arc(cx,cy-r*0.30,r*0.48,0,Math.PI*2);ctx.fill();
+  const faceGrad=ctx.createRadialGradient(cx-r*0.05,cy-r*0.32,r*0.02,cx,cy-r*0.26,r*0.38);
+  faceGrad.addColorStop(0,'#fff8e8');faceGrad.addColorStop(0.7,'#f0e8d0');faceGrad.addColorStop(1,'#e0d8b8');
+  ctx.fillStyle=faceGrad;ctx.beginPath();ctx.ellipse(cx,cy-r*0.28,r*0.36,r*0.28,0,0,Math.PI*2);ctx.fill();
+  drawPenguinEyes(ctx,pid,cx,cy,r,celebrate);
+  ctx.fillStyle='rgba(255,100,130,0.30)';
+  ctx.beginPath();ctx.ellipse(cx-r*0.28,cy-r*0.18,r*0.13,r*0.08,0.2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(cx+r*0.28,cy-r*0.18,r*0.13,r*0.08,-0.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ff9a20';ctx.beginPath();ctx.moveTo(cx-r*0.10,cy-r*0.10);ctx.lineTo(cx,cy+r*0.03);ctx.lineTo(cx+r*0.10,cy-r*0.10);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,240,180,0.45)';ctx.beginPath();ctx.ellipse(cx,cy-r*0.05,r*0.045,r*0.022,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ff9a20';
+  ctx.beginPath();ctx.ellipse(cx-r*0.20,cy+r*0.90,r*0.18,r*0.08,0.28,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(cx+r*0.20,cy+r*0.90,r*0.18,r*0.08,-0.28,0,Math.PI*2);ctx.fill();
+  drawPenguinAcc(ctx,pid,cx,cy,r);
+  ctx.restore();
+}
+
+function drawPenguinEyes(ctx,pid,cx,cy,r,celebrate){
+  const ey=cy-r*0.30,ex1=cx-r*0.17,ex2=cx+r*0.17,er=r*0.12;
+  if(pid==='sleepy'){ctx.strokeStyle='#1a1a2e';ctx.lineWidth=r*0.08;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(ex1-er,ey+r*0.01);ctx.lineTo(ex1+er,ey+r*0.01);ctx.stroke();ctx.beginPath();ctx.moveTo(ex2-er,ey+r*0.01);ctx.lineTo(ex2+er,ey+r*0.01);ctx.stroke();return;}
+  if(pid==='angry'){ctx.fillStyle='#1a1a2e';ctx.beginPath();ctx.arc(ex1,ey,er,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(ex2,ey,er,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#1a1a2e';ctx.lineWidth=r*0.07;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(ex1-er*0.9,ey-er*1.2);ctx.lineTo(ex1+er*0.5,ey-er*0.6);ctx.stroke();ctx.beginPath();ctx.moveTo(ex2+er*0.9,ey-er*1.2);ctx.lineTo(ex2-er*0.5,ey-er*0.6);ctx.stroke();return;}
+  if(pid==='happy'||celebrate){ctx.strokeStyle='#1a1a2e';ctx.lineWidth=r*0.08;ctx.lineCap='round';[ex1,ex2].forEach(ex=>{ctx.beginPath();ctx.arc(ex,ey+r*0.04,er,Math.PI+0.18,0-0.18);ctx.stroke();});return;}
+  if(pid==='cool'){ctx.fillStyle='#111';ctx.beginPath();ctx.roundRect(ex1-er*1.1,ey-er*0.7,er*2.2,er*1.4,er*0.32);ctx.fill();ctx.beginPath();ctx.roundRect(ex2-er*1.1,ey-er*0.7,er*2.2,er*1.4,er*0.32);ctx.fill();ctx.beginPath();ctx.moveTo(ex1+er*1.1,ey);ctx.lineTo(ex2-er*1.1,ey);ctx.lineWidth=r*0.06;ctx.strokeStyle='#111';ctx.stroke();ctx.fillStyle='rgba(60,180,255,0.22)';ctx.beginPath();ctx.roundRect(ex1-er*1.05,ey-er*0.65,er*2.1,er*1.3,er*0.28);ctx.fill();ctx.beginPath();ctx.roundRect(ex2-er*1.05,ey-er*0.65,er*2.1,er*1.3,er*0.28);ctx.fill();return;}
+  if(pid==='star'){ctx.fillStyle='#1a1a2e';ctx.beginPath();ctx.arc(ex1,ey,er,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(ex2,ey,er,0,Math.PI*2);ctx.fill();ctx.fillStyle='#FFD700';[ex1,ex2].forEach(ex=>drawStar5(ctx,ex,ey,er*0.78,er*0.38));return;}
+  ctx.fillStyle='#1a1a2e';ctx.beginPath();ctx.arc(ex1,ey,er,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(ex2,ey,er,0,Math.PI*2);ctx.fill();
+}
+function drawStar5(ctx,cx,cy,r1,r2){ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,rv=i%2===0?r1:r2;i===0?ctx.moveTo(cx+rv*Math.cos(a),cy+rv*Math.sin(a)):ctx.lineTo(cx+rv*Math.cos(a),cy+rv*Math.sin(a));}ctx.closePath();ctx.fill();}
+
+function drawPenguinAcc(ctx,pid,cx,cy,r){
+  if(pid==='sleepy'){ctx.fillStyle='#4a72d4';ctx.beginPath();ctx.ellipse(cx,cy-r*0.76,r*0.48,r*0.12,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#5a88f0';ctx.beginPath();ctx.moveTo(cx-r*0.34,cy-r*0.76);ctx.lineTo(cx-r*0.10,cy-r*1.44);ctx.quadraticCurveTo(cx,cy-r*1.54,cx+r*0.10,cy-r*1.44);ctx.lineTo(cx+r*0.34,cy-r*0.76);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx+r*0.10,cy-r*1.44,r*0.085,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(100,160,255,0.9)';ctx.font=`bold ${r*0.45}px Jua`;ctx.textAlign='left';ctx.fillText('z',cx+r*0.52,cy-r*0.60);ctx.fillText('z',cx+r*0.62,cy-r*0.75);ctx.fillText('Z',cx+r*0.70,cy-r*0.92);}
+  else if(pid==='cool'){ctx.fillStyle='#e03030';ctx.beginPath();ctx.ellipse(cx+r*0.05,cy-r*0.76,r*0.50,r*0.12,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#cc2020';ctx.fillRect(cx-r*0.38,cy-r*1.24,r*0.76,r*0.50);ctx.beginPath();ctx.arc(cx,cy-r*1.24,r*0.38,Math.PI,0);ctx.fill();ctx.fillStyle='#fff';ctx.font=`bold ${r*0.45}px Jua`;ctx.textAlign='center';ctx.fillText('B',cx,cy-r*0.90);ctx.fillStyle='#aa1818';ctx.beginPath();ctx.ellipse(cx-r*0.28,cy-r*0.76,r*0.24,r*0.09,-0.3,0,Math.PI*2);ctx.fill();}
+  else if(pid==='star'){ctx.fillStyle='#FFD700';ctx.beginPath();ctx.moveTo(cx-r*0.34,cy-r*0.78);ctx.lineTo(cx-r*0.34,cy-r*1.04);ctx.lineTo(cx-r*0.16,cy-r*0.90);ctx.lineTo(cx,cy-r*1.14);ctx.lineTo(cx+r*0.16,cy-r*0.90);ctx.lineTo(cx+r*0.34,cy-r*1.04);ctx.lineTo(cx+r*0.34,cy-r*0.78);ctx.closePath();ctx.fill();ctx.strokeStyle='#c8900a';ctx.lineWidth=r*0.03;ctx.stroke();ctx.fillStyle='#ff4488';ctx.beginPath();ctx.arc(cx,cy-r*0.98,r*0.058,0,Math.PI*2);ctx.fill();ctx.fillStyle='#44aaff';ctx.beginPath();ctx.arc(cx-r*0.22,cy-r*0.82,r*0.042,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(cx+r*0.22,cy-r*0.82,r*0.042,0,Math.PI*2);ctx.fill();}
+  else if(pid==='bandage'){ctx.strokeStyle='#fff';ctx.lineWidth=r*0.11;ctx.lineCap='butt';ctx.beginPath();ctx.arc(cx,cy-r*0.30,r*0.48,-0.8,Math.PI+0.8);ctx.stroke();ctx.beginPath();ctx.arc(cx,cy-r*0.30,r*0.48,Math.PI-0.25,0+0.25);ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.rect(cx+r*0.42,cy-r*0.54,r*0.20,r*0.10);ctx.fill();ctx.fillStyle='#ff3333';ctx.fillRect(cx-r*0.055,cy-r*0.60,r*0.11,r*0.07);ctx.fillRect(cx-r*0.028,cy-r*0.65,r*0.056,r*0.17);ctx.fillStyle='#ffccaa';ctx.beginPath();ctx.roundRect(cx-r*0.20,cy-r*0.16,r*0.40,r*0.13,r*0.03);ctx.fill();ctx.fillStyle='#f0bb99';ctx.fillRect(cx-r*0.08,cy-r*0.16,r*0.16,r*0.13);ctx.font=`${r*0.45}px serif`;ctx.textAlign='center';ctx.fillText('💢',cx+r*0.46,cy-r*0.74);}
+  else if(pid==='normal'){ctx.fillStyle='#4a7a30';ctx.beginPath();ctx.ellipse(cx,cy-r*0.76,r*0.52,r*0.12,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#5a9a3c';ctx.fillRect(cx-r*0.34,cy-r*1.20,r*0.68,r*0.47);ctx.beginPath();ctx.arc(cx,cy-r*1.20,r*0.34,Math.PI,0);ctx.fill();ctx.fillStyle='#e8c840';ctx.fillRect(cx-r*0.34,cy-r*0.77,r*0.68,r*0.07);ctx.font=`${r*0.55}px serif`;ctx.textAlign='center';ctx.fillText('🎣',cx+r*0.18,cy-r*0.88);}
+  else if(pid==='happy'){ctx.fillStyle='#ff88cc';ctx.beginPath();ctx.ellipse(cx-r*0.14,cy-r*0.80,r*0.16,r*0.10,0.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(cx+r*0.14,cy-r*0.80,r*0.16,r*0.10,-0.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff44aa';ctx.beginPath();ctx.arc(cx,cy-r*0.80,r*0.058,0,Math.PI*2);ctx.fill();}
+  else if(pid==='angry'){ctx.font=`${r*0.55}px serif`;ctx.textAlign='center';ctx.fillText('💢',cx+r*0.48,cy-r*0.84);}
+}
+
+/* ── 선택 UI ── */
+function buildSelectUI(){
+  const grid=document.getElementById('penguin-grid');grid.innerHTML='';
+  PENGUINS.forEach(p=>{
+    const card=document.createElement('div');card.className='penguin-card';card.id=`pcard-${p.id}`;
+    const c=document.createElement('canvas');c.width=76;c.height=82;
+    drawPenguin(c.getContext('2d'),p.id,38,34,26);
+    card.appendChild(c);
+    const lbl=document.createElement('div');lbl.className='penguin-label';lbl.textContent=p.name;card.appendChild(lbl);
+    const chk=document.createElement('div');chk.className='check-badge';chk.textContent='✓';card.appendChild(chk);
+    card.onclick=()=>{clickSound();selectedPenguin=p.id;updateSelectUI();};
+    grid.appendChild(card);
+  });
+}
+function updateSelectUI(){
+  PENGUINS.forEach(p=>{const c=document.getElementById(`pcard-${p.id}`);if(c)c.classList.toggle('selected',p.id===selectedPenguin);});
+  const rp=document.getElementById('record-panel');
+  if(currentUser&&!currentUser.guest){
+    rp.style.display='block';
+    document.getElementById('best-score-disp').textContent=currentUser.bestScore||0;
+    document.getElementById('total-fish-disp').textContent=currentUser.totalFish||0;
+    document.getElementById('user-level').textContent=calcLevel(currentUser.totalFish);
+  }
+  document.getElementById('sel-start-btn').disabled=!selectedPenguin;
+}
+function goSelectScreen(){stopBGM();stopWave();showScreen('screen-select');gameState='idle';}
+function goToGame(){
+  if(!selectedPenguin)return;
+  if(currentUser)currentUser.penguin=selectedPenguin;saveProgress();
+  showScreen('screen-game');initGameScene();beginCountdown();
+}
+
+/* ── 배경 애니메이션 ── */
+function runTitleBg(){
+  const c=document.getElementById('title-bg');const ctx=c.getContext('2d');let t=0;
+  function rsz(){c.width=window.innerWidth;c.height=window.innerHeight;}rsz();window.addEventListener('resize',rsz);
+  function loop(){
+    if(!document.getElementById('screen-title').classList.contains('active'))return;
+    ctx.clearRect(0,0,c.width,c.height);const w=c.width,h=c.height;
+    const sg=ctx.createLinearGradient(0,0,0,h*0.55);sg.addColorStop(0,'#060c1e');sg.addColorStop(1,'#0d1e40');
+    ctx.fillStyle=sg;ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#fff';
+    [[0.1,0.08],[0.3,0.05],[0.55,0.12],[0.75,0.04],[0.88,0.09],[0.45,0.16],[0.2,0.18]].forEach(([rx,ry])=>{
+      ctx.globalAlpha=(0.5+Math.sin(t*0.025+rx*12)*0.5)*0.75;ctx.beginPath();ctx.arc(rx*w,ry*h,1.5,0,Math.PI*2);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    const wY=h*0.52;const sg2=ctx.createLinearGradient(0,wY,0,h);sg2.addColorStop(0,'#0a2040');sg2.addColorStop(1,'#030a12');
+    ctx.fillStyle=sg2;ctx.beginPath();ctx.moveTo(0,wY);
+    for(let x=0;x<=w;x+=8)ctx.lineTo(x,wY+Math.sin(x*0.02+t*0.04)*7+Math.sin(x*0.04+t*0.025)*4);
+    ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();
+    [0.15,0.45,0.72,0.88].forEach((rx,i)=>{
+      const fx=((rx*w+t*(0.4+i*0.1))%w);const fy=wY+20+Math.sin(t*0.03+i)*18;
+      ctx.globalAlpha=0.55;ctx.font='36px serif';ctx.textAlign='center';
+      ctx.fillText(['🐟','🐠','🐡','🦈'][i],fx,fy);
+    });
+    ctx.globalAlpha=1;t++;requestAnimationFrame(loop);
+  }loop();
+}
+function runSelectBg(){
+  const c=document.getElementById('select-bg');const ctx=c.getContext('2d');let t=0;
+  function rsz(){c.width=window.innerWidth;c.height=window.innerHeight;}rsz();window.addEventListener('resize',rsz);
+  function loop(){
+    if(!document.getElementById('screen-select').classList.contains('active'))return;
+    ctx.clearRect(0,0,c.width,c.height);const w=c.width,h=c.height;
+    const night=isNight();
+    const sg=ctx.createLinearGradient(0,0,0,h*0.55);
+    if(night){sg.addColorStop(0,'#020814');sg.addColorStop(1,'#0a1e3a');}
+    else{sg.addColorStop(0,'#3ab8f0');sg.addColorStop(1,'#8dd8f0');}
+    ctx.fillStyle=sg;ctx.fillRect(0,0,w,h);
+    const wY=h*0.52;
+    const sg2=ctx.createLinearGradient(0,wY,0,h);
+    if(night){sg2.addColorStop(0,'#0a2040');sg2.addColorStop(1,'#030a12');}
+    else{sg2.addColorStop(0,'#28a0d8');sg2.addColorStop(1,'#0a4870');}
+    ctx.fillStyle=sg2;ctx.beginPath();ctx.moveTo(0,wY);
+    for(let x=0;x<=w;x+=8)ctx.lineTo(x,wY+Math.sin(x*0.02+t*0.04)*7+Math.sin(x*0.04+t*0.025)*4);
+    ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();
+    t++;requestAnimationFrame(loop);
+  }loop();
+}
+function animTitlePenguin(){
+  const c=document.getElementById('title-penguin');const ctx=c.getContext('2d');let t=0;
+  function loop(){
+    ctx.clearRect(0,0,c.width,c.height);
+    const bob=Math.sin(t*0.05)*5;
+    drawPenguin(ctx,'happy',90,88+bob,52,{celebrate:Math.sin(t*0.055)>0.7});
+    t++;requestAnimationFrame(loop);
+  }loop();
+}
+
+/* ═══ Teachable Machine Pose ═══ */
+const MODEL_URL='https://teachablemachine.withgoogle.com/models/EjK7dj7BT/';
+let tmModel,webcamTM,camCtxTM,maxPredTM;
+let currentClass=0;
+let prevClass=0;
+let modelReady=false;
+let squatTriggered=false;
+
+async function initCamera(){
+  try{
+    const modelURL=MODEL_URL+'model.json';
+    const metadataURL=MODEL_URL+'metadata.json';
+    tmModel=await tmPose.load(modelURL,metadataURL);
+    maxPredTM=tmModel.getTotalClasses();
+    const size=168;
+    const flip=true;
+    webcamTM=new tmPose.Webcam(size,size,flip);
+    await webcamTM.setup();
+    await webcamTM.play();
+    window.requestAnimationFrame(camLoop);
+    const canvas=document.getElementById('camCanvas');
+    canvas.width=size;canvas.height=size;
+    camCtxTM=canvas.getContext('2d');
+    const pl=document.getElementById('pose-labels');
+    for(let i=0;i<maxPredTM;i++){pl.appendChild(document.createElement('div'));}
+    modelReady=true;
+    document.getElementById('cam-status').textContent='✅ 카메라 연결됨';
+  }catch(e){
+    console.warn('카메라 오류:',e);
+    document.getElementById('cam-status').textContent='⚠️ 카메라 오류 (스페이스바 사용)';
+    enableKB();
+  }
+}
+
+async function camLoop(){
+  webcamTM.update();
+  await predict();
+  window.requestAnimationFrame(camLoop);
+}
+
+async function predict(){
+  if(!tmModel||!webcamTM)return;
+  try{
+    const{pose,posenetOutput}=await tmModel.estimatePose(webcamTM.canvas);
+    const prediction=await tmModel.predict(posenetOutput);
+    let topIdx=0,topProb=0;
+    const pl=document.getElementById('pose-labels');
+    for(let i=0;i<maxPredTM;i++){
+      const p=prediction[i].probability;
+      if(pl&&pl.childNodes[i]){
+        pl.childNodes[i].innerHTML=prediction[i].className+': '+p.toFixed(2);
+        pl.childNodes[i].classList.toggle('active',p>0.55);
+      }
+      if(p>topProb){topProb=p;topIdx=i;}
+    }
+    prevClass=currentClass;
+    if(topProb>0.55)currentClass=topIdx;
+    if(prevClass===0&&currentClass===1&&gameState==='playing'&&!squatTriggered){
+      squatTriggered=true;
+      onSquatDetected();
+    }
+    if(currentClass===0){squatTriggered=false;}
+    updateActionBadge();
+    if(webcamTM.canvas&&camCtxTM){
+      camCtxTM.drawImage(webcamTM.canvas,0,0);
+      if(pose){
+        tmPose.drawKeypoints(pose.keypoints,0.5,camCtxTM);
+        tmPose.drawSkeleton(pose.keypoints,0.5,camCtxTM);
+      }
+    }
+  }catch(e){}
+}
+
+function updateActionBadge(){
+  const b=document.getElementById('action-badge');
+  if(currentClass===1){b.textContent='🏋️ 스쿼트!';b.className='action-badge squat';}
+  else{b.textContent='🧍 준비 자세';b.className='action-badge rest';}
+}
+
+function enableKB(){
+  document.addEventListener('keydown',e=>{
+    if(e.code==='Space'&&e.target.tagName!=='INPUT'){
+      e.preventDefault();
+      if(currentClass===0&&gameState==='playing'&&!squatTriggered){
+        squatTriggered=true;prevClass=0;currentClass=1;
+        updateActionBadge();onSquatDetected();
+      }
+    }
+  });
+  document.addEventListener('keyup',e=>{
+    if(e.code==='Space'){currentClass=0;squatTriggered=false;updateActionBadge();}
+  });
+}
+
+function onSquatDetected(){
+  if(fishSt===FS.IDLE){startFishing();}
+}
+
+/* ═══ 오디오 BGM ═══ */
+let bgmTimers=[],bgmNodes=[],bgmOn=false;
+
+function tone(freq,type,dur,vol=0.1,fEnd=null,delay=0){
+  try{
+    const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);
+    o.type=type;o.frequency.setValueAtTime(freq,ac.currentTime+delay);
+    if(fEnd)o.frequency.linearRampToValueAtTime(fEnd,ac.currentTime+delay+dur);
+    g.gain.setValueAtTime(0,ac.currentTime+delay);
+    g.gain.linearRampToValueAtTime(vol,ac.currentTime+delay+0.02);
+    g.gain.linearRampToValueAtTime(0,ac.currentTime+delay+dur);
+    o.start(ac.currentTime+delay);o.stop(ac.currentTime+delay+dur+0.01);
+  }catch(e){}
+}
+
+function startBGM(){
+  stopBGM();bgmOn=true;
+  try{
+    const ac=getAC();
+    const mel=[
+      {f:523,d:0.18},{f:659,d:0.18},{f:784,d:0.18},{f:659,d:0.18},
+      {f:880,d:0.18},{f:784,d:0.18},{f:659,d:0.28},{f:523,d:0.28},
+      {f:659,d:0.18},{f:784,d:0.18},{f:880,d:0.18},{f:1047,d:0.28},
+      {f:880,d:0.18},{f:784,d:0.18},{f:659,d:0.18},{f:784,d:0.18},
+      {f:523,d:0.18},{f:659,d:0.18},{f:784,d:0.36},
+      {f:659,d:0.18},{f:523,d:0.18},{f:440,d:0.18},{f:523,d:0.36},
+    ];
+    const bass=[
+      {f:131,d:0.36},{f:165,d:0.36},{f:196,d:0.36},{f:131,d:0.36},
+      {f:165,d:0.36},{f:196,d:0.36},{f:220,d:0.36},{f:131,d:0.36},
+      {f:131,d:0.36},{f:165,d:0.36},{f:196,d:0.36},{f:165,d:0.36},
+    ];
+    let mt=ac.currentTime+0.05;
+    mel.forEach(({f,d})=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.connect(g);g.connect(ac.destination);o.type='triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(0,mt);g.gain.linearRampToValueAtTime(0.06,mt+0.02);g.gain.linearRampToValueAtTime(0,mt+d*0.85);
+      o.start(mt);o.stop(mt+d);bgmNodes.push(o);mt+=d;
+    });
+    let bt=ac.currentTime+0.05;
+    bass.forEach(({f,d})=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.connect(g);g.connect(ac.destination);o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0,bt);g.gain.linearRampToValueAtTime(0.055,bt+0.03);g.gain.linearRampToValueAtTime(0,bt+d*0.6);
+      o.start(bt);o.stop(bt+d);bgmNodes.push(o);bt+=d;
+    });
+    let ht=ac.currentTime+0.05;
+    for(let i=0;i<32;i++){
+      const ac2=getAC(),bufSz=ac2.sampleRate*0.04;
+      const buf=ac2.createBuffer(1,bufSz,ac2.sampleRate);
+      const d=buf.getChannelData(0);for(let j=0;j<bufSz;j++)d[j]=(Math.random()*2-1)*0.3;
+      const src=ac2.createBufferSource();src.buffer=buf;
+      const hf=ac2.createBiquadFilter();hf.type='highpass';hf.frequency.value=8000;
+      src.connect(hf);const hg=ac2.createGain();hf.connect(hg);hg.connect(ac2.destination);
+      hg.gain.setValueAtTime(0.04,ht+i*0.22);hg.gain.linearRampToValueAtTime(0,ht+i*0.22+0.04);
+      src.start(ht+i*0.22);src.stop(ht+i*0.22+0.05);bgmNodes.push(src);
+    }
+    const totalDur=mt-ac.currentTime;
+    const tid=setTimeout(startBGM,totalDur*1000-100);bgmTimers.push(tid);
+  }catch(e){}
+}
+function stopBGM(){bgmOn=false;bgmTimers.forEach(clearTimeout);bgmTimers=[];bgmNodes.forEach(n=>{try{n.stop();}catch(e){}});bgmNodes=[];}
+
+let waveNode=null;
+function startWave(){
+  try{
+    const ac=getAC();
+    const buf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);
+    const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.12;
+    const src=ac.createBufferSource();src.buffer=buf;src.loop=true;
+    const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=350;
+    src.connect(lp);const g=ac.createGain();lp.connect(g);g.connect(ac.destination);g.gain.value=0.055;
+    src.start();waveNode={src};
+  }catch(e){}
+}
+function stopWave(){if(waveNode){try{waveNode.src.stop();}catch(e){}waveNode=null;}}
+
+function playSuccess(){
+  ohYeahSound();
+  setTimeout(()=>tone(523,'triangle',0.12,0.12),50);
+  setTimeout(()=>tone(659,'triangle',0.12,0.12),160);
+  setTimeout(()=>tone(784,'triangle',0.18,0.14),270);
+  setTimeout(()=>tone(1047,'triangle',0.28,0.16),380);
+}
+function playBigSuccess(){bigCatchSound();}
+function playAlarm(){for(let i=0;i<3;i++){tone(880,'square',0.14,0.14,null,i*0.24);tone(1100,'square',0.10,0.10,null,i*0.24+0.12);}}
+function playBeep(last){try{tone(last?900:440,'sine',last?0.32:0.14,0.13);}catch(e){}}
+function playCast(){tone(300,'sine',0.08,0.1,600);tone(600,'sine',0.06,0.06,200,0.08);}
+function playSplash(){tone(380,'sine',0.06,0.12,600);tone(280,'sine',0.14,0.09,150,0.05);}
+
+/* ═══ 게임 엔진 ═══ */
+const GC=document.getElementById('gameCanvas');
+const GX=GC.getContext('2d');
+const EFC=document.getElementById('effect-overlay');
+const EFX=EFC.getContext('2d');
+const GW=GC.width,GH=GC.height;
+
+let gameState='idle';
+let score=0,fishCount=0,gameTime=0;
+const GAME_DURATION=180;
+let lastTS=0,loopStarted=false;
+let alarmPlayed=false;
+
+const FS={IDLE:'idle',CASTING:'casting',FLYING:'flying',CATCHING:'catching',DONE:'done'};
+let fishSt=FS.IDLE;
+let catchAnim=0,catchFish=null;
+let celebrateTimer=0;
+let scorePopups=[];
+
+let bobberX=0,bobberY=0,bobberPhase=0;
+let rodAngle=0;
+let lineLen=0;
+let castPhase=0;
+
+let seagulls=[],clouds=[],underwaterFish=[],dolphins=[],whales=[],sharks=[];
+let bubbles=[],splashParts=[],waveTick=0,crowTimer=0;
+const boatX=160;
+
+let particles=[];
+
+const FISH_LIST=[
+  {name:'광어',  color:'#6a9a5a',sz:0.85,emoji:'🐟',voice:'광어다! 맛있겠다!'},
+  {name:'참돔',  color:'#e06040',sz:0.95,emoji:'🐠',voice:'오예! 참돔 낚았다!'},
+  {name:'대방어',color:'#4a7aaa',sz:1.10,emoji:'🐡',voice:'우아! 대방어다!'},
+  {name:'월척!', color:'#38cc68',sz:1.40,emoji:'🎣',voice:'월척이다! 최고야!'},
 ];
 
-/* ─── 단계별 목표 데이터 ─── */
-const PHASE_GOALS={
-  1:{
-    name:'Phase I – 병원기', period:'수술 후 1~7일', color:'#0EA5E9',
-    goals:['침대 이동 독립 수행','전륜 보행기(FWW)로 약 60m 독립 보행','가정용 운동 프로그램 독립 수행','보호자 교육 완료','퇴원 가능 상태 달성'],
-    cautions:['체중 부하 상태(WBAT·PWB·TDWB·NWB)는 의사가 결정','DVT 예방: 발목 펌프 30분마다 필수 시행','수술 부위 피부 매일 확인','통증 약물의 peak effect에 맞춰 운동 시행'],
-  },
-  2:{
-    name:'Phase II – 가정기', period:'수술 후 2~4주', color:'#22C55E',
-    goals:['고관절 굴곡 AROM 90° 달성','고관절 외전 AROM 20° 달성','무릎 굴곡 90° 달성','고관절 근력 60%·무릎 근력 70% 회복','지팡이로 가정 내 독립 보행','보호자 동반 지역사회 300m 보행'],
-    cautions:['감염 징후(발적·발열·심한 부종) 발견 시 즉시 의사 보고','봉합사/스테이플은 약 14일째 제거 — 상처 상태 관찰','트렌델렌버그 보행 발견 시 외전근 강화 집중 시행','의사 처방 체중 부하 상태 계속 준수'],
-  },
-  3:{
-    name:'Phase III – 외래기', period:'수술 후 5~8주', color:'#8B5CF6',
-    goals:['환측 고관절 완전 AROM 회복','하지 근력 75% 회복 (MMT 4-/5)','보행 패턴 정상화 (트렌델렌버그 교정)','지역사회 독립 보행 달성','심폐 기능 향상 및 일상 복귀'],
-    cautions:['보행 중 허벅지 통증·앉으면 호전 → 간헐적 파행 가능성, 의사 보고','지속적 트렌델렌버그 징후 → 둔부 신경 손상 가능성, 의사 보고','수술 부위 발적·발열·심한 부종 → 감염 가능성, 즉시 보고','전기 자극치료 시 금속 임플란트 → 반드시 의사 상의 후 적용'],
-  },
-};
+function isNight(){const h=new Date().getHours();return h<6||h>=19;}
 
-/* ─── 운동 데이터 ─── */
-const EX={
-  d0:[
-    {id:'spirometry',name:'유인 폐활량계',nameEn:'Incentive Spirometry',pos:'침대',reps:10,unit:'회/시간',desc:'최대한 깊게 흡기하여 폐활량계 표시기를 올립니다. 3초 유지 후 천천히 내쉽니다. 무기폐·폐렴 예방.',ok:['입술을 마우스피스에 완전히 밀착','천천히 깊게 흡기하여 표시기 올리기','3초 유지 후 천천히 내쉬기'],ng:['너무 빠르게 숨 들이마시기','표시기를 끝까지 올리지 않기'],ph:1,wk:0,icon:'🫁'},
-    {id:'ted',name:'TED 스타킹',nameEn:'TED Stockings',pos:'침대',desc:'DVT 예방을 위한 압박 스타킹. 처방에 따라 지속 착용합니다.',ph:1,wk:0,icon:'🧦',isPassive:true},
-  ],
-  d1:[
-    {id:'ankle_pumps',name:'발목 펌프',nameEn:'Ankle Pumps',pos:'침대 누운 자세',sets:3,reps:10,desc:'발목을 위아래로 반복 굴곡·신전. DVT 및 부종 예방. 30분마다 시행.',ok:['발목을 최대한 위아래로 움직임','천천히 반복'],ng:['발목만 살짝 까딱임','너무 빠르게'],ph:1,wk:1,icon:'🦶'},
-    {id:'quad_sets',name:'대퇴사두근 수축',nameEn:'Quadriceps Sets',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'다리를 펴고 허벅지 앞쪽을 조입니다. 무릎 뒤쪽을 침대에 누르고 발목을 당깁니다.',ok:['슬개골이 위로 움직임 확인','5초간 유지'],ng:['무릎이 구부러짐'],ph:1,wk:1,icon:'💪'},
-    {id:'quad_add',name:'내전근 포함 대퇴사두근 수축',nameEn:'Quad Set + Adductor Squeeze',pos:'침대 누운 자세',sets:3,reps:10,hold:10,desc:'무릎 사이에 베개를 놓고 대퇴사두근 수축과 동시에 양 무릎으로 베개를 조입니다.',ok:['베개 사이에 단단히 끼움','10초 유지'],ng:['베개 없이 시행'],ph:1,wk:1,icon:'💪'},
-    {id:'glute',name:'둔부 수축',nameEn:'Gluteal Sets',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'양쪽 엉덩이 근육을 꽉 조입니다. 5초 유지 후 이완.',ok:['엉덩이 근육을 최대한 조임','5초 유지'],ng:['한쪽만 조임'],ph:1,wk:1,icon:'💪'},
-    {id:'hamstring',name:'슬괴근 수축',nameEn:'Hamstring Sets',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'무릎을 살짝 굽히고 발꿈치로 침대 바닥을 누르며 뒤쪽 허벅지를 수축합니다.',ok:['발꿈치로 바닥을 강하게 누름','5초 유지'],ng:['발꿈치를 들어 올림'],ph:1,wk:1,icon:'🦵'},
-    {id:'hip_abd_set',name:'고관절 외전 수축',nameEn:'Hip Abduction Sets',pos:'침대 누운 자세',sets:3,reps:10,desc:'양 무릎 사이에 베개를 놓고 벌리듯이 수축합니다.',ph:1,wk:1,icon:'🦵'},
-    {id:'heel_slides',name:'무릎 굽히기',nameEn:'Heel Slides',pos:'침대 누운 자세',sets:3,reps:10,desc:'발꿈치를 바닥에 대고 무릎을 구부렸다가 펩니다.',ph:1,wk:1,icon:'🦵'},
-    {id:'pnf',name:'발목 PNF 패턴',nameEn:'Ankle PNF',pos:'침대 누운 자세',reps:10,desc:'발목을 두 대각선 방향으로 움직입니다.',ph:1,wk:1,icon:'🦶'},
-  ],
-  d2:[
-    {id:'irq',name:'내측 광근 강화',nameEn:'Inner Range Quads',pos:'침대 누운 자세',sets:3,reps:10,hold:5,desc:'무릎 아래에 수건을 받칩니다. 다리를 쭉 펩니다. 5초 유지.',ph:1,wk:1,icon:'💪'},
-    {id:'hipflex_ly',name:'누운 자세 고관절 굴곡',nameEn:'Hip Flexion Lying',pos:'침대 누운 자세',sets:3,reps:10,desc:'등을 대고 누워 무릎을 가슴 쪽으로 구부립니다.',ph:1,wk:1,icon:'🦵'},
-    {id:'hipabd_ly',name:'누운 자세 고관절 외전',nameEn:'Hip Abduction Lying',pos:'침대 누운 자세',sets:3,reps:10,desc:'환측 다리를 옆으로 밀어냅니다.',ph:1,wk:1,icon:'🦵'},
-    {id:'knee_ext',name:'의자 무릎 신전',nameEn:'Knee Extension Chair',pos:'의자 앉은 자세',sets:3,reps:10,hold:5,desc:'의자 깊숙이 앉아 무릎을 최대한 펴고 발목을 당깁니다.',ph:1,wk:1,icon:'💺'},
-    {id:'add_chair',name:'의자 내전 수축',nameEn:'Adduction Squeeze Chair',pos:'의자 앉은 자세',sets:3,reps:10,hold:5,desc:'무릎 사이에 쿠션을 끼우고 안쪽으로 조입니다.',ph:1,wk:1,icon:'💺'},
-  ],
-  d3:[
-    {id:'hipflex_sit',name:'앉아서 고관절 굴곡',nameEn:'Hip Flexion Sitting',pos:'의자',reps:10,hold:3,desc:'바르게 앉아 무릎을 번갈아가며 들어 올려 3초 유지합니다.',ph:1,wk:1,icon:'💺'},
-    {id:'st_hip_fl',name:'서서 고관절 굴곡',nameEn:'Standing Hip Flexion',pos:'서서',reps:10,hold:5,desc:'조리대를 잡고 무릎을 고관절 높이까지 올립니다.',ph:1,wk:1,icon:'🚶'},
-    {id:'st_hip_ab',name:'서서 고관절 외전',nameEn:'Standing Hip Abduction',pos:'서서',reps:10,hold:5,desc:'손잡이를 잡고 다리를 편 채 옆으로 들어 올립니다.',ph:1,wk:1,icon:'🚶'},
-    {id:'st_hip_ex',name:'서서 고관절 신전',nameEn:'Standing Hip Extension',pos:'서서',reps:10,hold:5,desc:'손잡이를 잡고 엉덩이를 조이면서 다리를 뒤로 들어 올립니다.',ph:1,wk:1,icon:'🚶'},
-    {id:'tiptoes',name:'양측 발뒤꿈치 올리기',nameEn:'Bilateral Tiptoes',pos:'서서',sets:3,reps:10,hold:5,desc:'보행기를 잡고 발뒤꿈치를 들어 올립니다. 5초 유지.',ph:1,wk:1,icon:'👟'},
-    {id:'ue1',name:'상지 강화',nameEn:'UE Strengthening',pos:'앉거나 서서',sets:3,reps:15,desc:'세라밴드 또는 침대 바를 이용한 상지 근력 강화.',ph:1,wk:1,icon:'💪'},
-  ],
-  w2:[
-    {id:'heel_str',name:'뒤꿈치 스트레칭',nameEn:'Heel Cord Stretch',pos:'서서',sets:3,reps:3,hold:20,desc:'환측 발을 뒤로 빼고 발끝을 약간 안쪽으로 향합니다. 양손을 벽에 대고 앞으로 기울이면서 장딴지 스트레칭. 뒤꿈치를 바닥에서 떼지 않습니다. 20초 유지.',ok:['뒤꿈치가 바닥에 완전히 밀착','발끝이 약간 안쪽을 향함','등이 곧게 펴짐','20초 유지'],ng:['발꿈치가 바닥에서 들림','무릎이 구부러짐'],ph:2,wk:2,illus:true,icon:'🧘'},
-    {id:'ham_str',name:'앉아서 슬괴근 스트레칭',nameEn:'Sitting Hamstring Stretch',pos:'앉은 자세',sets:3,reps:3,hold:20,desc:'환측 다리를 쭉 펴고 수건을 발에 걸고 등을 편 채 앞으로 숙입니다. 20초 유지.',ok:['환측 다리가 완전히 펴진 상태','등을 곧게 편 채 앞으로 숙임','당기는 느낌 확인'],ng:['허리가 구부러짐','다리가 구부러진 채 스트레칭'],ph:2,wk:2,illus:true,icon:'🧘'},
-    {id:'prone_q',name:'엎드려 대퇴사두근 스트레칭',nameEn:'Prone Quad Stretch',pos:'엎드린 자세',sets:3,reps:3,hold:20,desc:'엎드린 자세에서 무릎을 구부려 수건으로 발목을 당겨 대퇴사두근을 스트레칭합니다. 골반을 들지 않습니다.',ok:['골반이 바닥에 밀착','수건으로 발목 지지','20초 유지'],ng:['골반이 들림'],ph:2,wk:2,illus:true,icon:'🧘'},
-    {id:'ktc',name:'무릎 가슴 당기기',nameEn:'Single Knee-to-Chest',pos:'침대 누운 자세',sets:2,reps:3,desc:'비수술 측 무릎을 천천히 가슴 쪽으로 당깁니다. 요추 피로와 경직 완화.',ok:['비수술 측 무릎만 당김','천천히 부드럽게 움직임'],ng:['수술 측 무릎을 당김 — 절대 금지'],ph:2,wk:2,illus:true,icon:'🛌'},
-    {id:'msq',name:'미니 스쿼트',nameEn:'Minisquats',pos:'서서',sets:3,reps:10,desc:'조리대를 잡고 발을 어깨 너비로 섭니다. 무릎을 45도 정도 구부렸다가 선 자세로 돌아옵니다.',ok:['무릎이 발가락을 넘지 않음','등이 곧게 섬','45도만 구부림'],ng:['무릎이 발가락을 넘어감','허리가 앞으로 굽음'],ph:2,wk:2,illus:true,icon:'🏋️'},
-    {id:'wsl',name:'벽 밀기 내전',nameEn:'Wall Slides + Adductor Pillow',pos:'서서',sets:3,reps:10,hold:10,desc:'등을 벽에 대고 서서 허벅지 사이에 베개를 낍니다. 무릎을 45도로 굽히며 아래로 미끄러지면서 베개를 조입니다. 10초 유지.',ok:['등이 벽에 완전히 밀착','베개를 무릎으로 조임','10초 유지'],ng:['등이 벽에서 떨어짐','베개를 놓침'],ph:2,wk:2,illus:true,icon:'🏋️'},
-    {id:'lunge',name:'런지',nameEn:'Modified Lunges',pos:'서서',sets:1,reps:10,desc:'한 손으로 조리대를 잡고 한 발을 앞으로 내딛어 런지합니다.',ok:['조리대를 잡고 균형 유지','앞무릎이 발가락 위에 위치','등이 곧게 섬'],ng:['무릎이 안쪽으로 무너짐','몸이 앞으로 기울어짐'],ph:2,wk:2,illus:true,icon:'🚶'},
-    {id:'tb_ue',name:'세라밴드 상지 강화',nameEn:'Theraband UE Strengthening',pos:'앉거나 서서',sets:3,reps:15,desc:'탄성 밴드를 이용한 상지 근력 운동.',ok:['밴드 장력을 적절히 유지','천천히 제어하며 동작'],ng:['너무 빠르게 동작'],ph:2,wk:2,icon:'💪'},
-  ],
-  w3:[
-    {id:'sla',name:'옆으로 누워 고관절 외전',nameEn:'Side-lying Hip Abduction',pos:'옆으로 누운 자세',sets:3,reps:10,hold:5,desc:'비수술 측으로 눕고 아래 무릎을 구부립니다. 수술 측 다리를 편 채로 6~8인치 들어 올립니다. 5초 유지.',ph:2,wk:3,icon:'🦵'},
-    {id:'slad',name:'옆으로 누워 고관절 내전',nameEn:'Side-lying Hip Adduction',pos:'옆으로 누운 자세',sets:3,reps:10,hold:5,desc:'수술 측으로 눕습니다. 아래 다리를 6~8인치 들어 올려 5~10초 유지.',ph:2,wk:3,icon:'🦵'},
-  ],
-  w5:[
-    {id:'side_step',name:'옆으로 걷기',nameEn:'Side Stepping',pos:'서서',sets:5,reps:5,desc:'조리대를 잡고 왼쪽 5보, 오른쪽 5보.',ph:3,wk:5,icon:'🚶'},
-    {id:'uns',name:'비보조 서기 훈련',nameEn:'Timed Unsupported Stand',pos:'서서',desc:'보조 없이 2분 서기 목표.',ph:3,wk:5,icon:'🧍'},
-    {id:'bboard',name:'균형 보드 훈련',nameEn:'Balance Board',pos:'서서',sets:3,desc:'균형 보드 위에 서서 점차 보조를 줄여나갑니다.',ph:3,wk:5,icon:'⚖️'},
-    {id:'stairs',name:'계단 훈련',nameEn:'Stair Training',pos:'이동',desc:'올라갈 때: 비수술 측→수술 측→보조기.',ph:3,wk:5,icon:'🪜'},
-    {id:'car_tr',name:'자동차 이동 훈련',nameEn:'Car Transfer',pos:'이동',desc:'조수석을 최대한 뒤로 밀고 수술 측 다리를 편 채 천천히 앉습니다.',ph:3,wk:5,icon:'🚗'},
-    {id:'legpress',name:'레그 프레스',nameEn:'Leg Press',pos:'기구',sets:3,reps:15,desc:'무릎이 약 90도 굽혀지도록 기구를 조정합니다.',ph:3,wk:5,icon:'🏋️'},
-    {id:'trunk',name:'트렁크 안정화',nameEn:'Trunk Stabilization',pos:'엎드리기/사지',sets:3,reps:15,desc:'코어 안정화 운동.',ph:3,wk:5,icon:'💪'},
-    {id:'treadmill',name:'트레드밀 보행',nameEn:'Treadmill Walking',pos:'심폐',desc:'낮은 속도로 시작. 10~30분.',ph:3,wk:5,icon:'🏃'},
-    {id:'stepup',name:'스텝 업',nameEn:'Step-ups',pos:'서서',sets:3,reps:10,desc:'수술 측 다리로 낮은 단을 먼저 오릅니다.',ph:3,wk:5,icon:'🪜'},
-    {id:'hip_rot',name:'고관절 회전근 스트레칭',nameEn:'Hip Rotation Stretch',pos:'앉은 자세',sets:3,reps:3,hold:20,desc:'앉은 자세에서 고관절 내·외회전근 스트레칭.',ph:3,wk:5,icon:'🧘'},
-  ],
-  w7:[
-    {id:'ube',name:'상체 에르고미터',nameEn:'Upper Body Ergometer',pos:'심폐',desc:'15~30분, 점진적 증가.',ph:3,wk:7,icon:'🚴'},
-    {id:'bike',name:'고정식 자전거',nameEn:'Stationary Bicycle',pos:'심폐',desc:'저강도로 시작. 15~30분.',ph:3,wk:7,icon:'🚴'},
-    {id:'uneven',name:'불균일 지면 보행 훈련',nameEn:'Uneven Surface Walking',pos:'이동',desc:'잔디, 모래, 경사로 등 다양한 지면.',ph:3,wk:7,icon:'🚶'},
-    {id:'adv_bal',name:'단계별 균형 보드 훈련',nameEn:'Advanced Balance Board',pos:'서서',sets:3,desc:'동적 균형 훈련. 태극권도 권장.',ph:3,wk:7,icon:'⚖️'},
-  ],
-};
-
-function getExsByDay(d){
-  if(d===0)return EX.d0;if(d===1)return[...EX.d1];if(d===2)return[...EX.d1,...EX.d2];
-  if(d>=3&&d<=7)return[...EX.d1,...EX.d2,...EX.d3];if(d>=8&&d<=14)return EX.w2;
-  if(d>=15&&d<=28)return[...EX.w2,...EX.w3];if(d>=29&&d<=42)return[...EX.w2,...EX.w3,...EX.w5];
-  return[...EX.w5,...EX.w7];
-}
-function getPhase(d){return d<=7?1:d<=28?2:3}
-function dayLabel(d){if(d===0)return'수술 당일';if(d<=7)return`수술 후 ${d}일`;return`수술 후 ${Math.ceil(d/7)}주`;}
-const WEEK_GOALS={0:'호흡기 관리 및 DVT 예방',1:'침대에서 독립 이동 · 60m 보행',2:'등척성→능동 ROM 전환 · 가정 방문 PT 시작',3:'보행기→지팡이 전환 · 계단 훈련',5:'외전근 강화 · 지역사회 독립 보행',7:'심폐 기능 15~30분 · 자기 관리 전환'};
-
-/* ─── 진행률 링 ─── */
-function ProgressRing({pct,size=60,stroke=6,color}){
-  const r=(size-stroke*2)/2,c=2*Math.PI*r;
-  return(<svg width={size} height={size}><circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bd)" strokeWidth={stroke}/><circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color||'var(--p)'} strokeWidth={stroke} strokeDasharray={c} strokeDashoffset={c-((pct||0)/100)*c} style={{transform:'rotate(-90deg)',transformOrigin:'center',transition:'stroke-dashoffset 0.6s'}}/><text x={size/2} y={size/2+5} textAnchor="middle" fontSize={size/5} fontWeight="700" fill="var(--tx)">{Math.round(pct)}%</text></svg>);
+function initGameScene(){
+  seagulls=[];for(let i=0;i<4;i++)seagulls.push(mkGull(true));
+  clouds=[];for(let i=0;i<5;i++)clouds.push(mkCloud(true));
+  underwaterFish=[];for(let i=0;i<14;i++)underwaterFish.push(mkUFish());
+  dolphins=[];for(let i=0;i<2;i++)dolphins.push(mkDolphin());
+  whales=[];whales.push(mkWhale());
+  sharks=[];sharks.push(mkShark());
+  bubbles=[];splashParts=[];scorePopups=[];particles=[];
+  waveTick=0;crowTimer=0;alarmPlayed=false;
+  rodAngle=0;lineLen=0;castPhase=0;
+  bobberX=boatX+220;bobberY=GH*0.44+10;
 }
 
-/* ─── 타이머 ─── */
-function ExerciseTimer({holdTime,onAutoRep}){
-  const [left,setLeft]=useState(holdTime);
-  const [running,setRunning]=useState(false);
-  const [done,setDone]=useState(false);
-  const ref=useRef(null);
-  useEffect(()=>{
-    if(running&&left>0){ref.current=setInterval(()=>setLeft(l=>{if(l<=1){clearInterval(ref.current);setRunning(false);setDone(true);onAutoRep&&onAutoRep();return 0;}return l-1;}),1000);}
-    return()=>clearInterval(ref.current);
-  },[running]);
-  const reset=()=>{clearInterval(ref.current);setLeft(holdTime);setRunning(false);setDone(false);};
-  const pct=((holdTime-left)/holdTime)*100,r=44,c=2*Math.PI*r;
-  return(
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
-      <svg width="112" height="112" viewBox="0 0 112 112">
-        <circle cx="56" cy="56" r={r} fill="none" stroke="var(--bd)" strokeWidth="8"/>
-        <circle cx="56" cy="56" r={r} fill="none" stroke={done?'var(--s)':'var(--p)'} strokeWidth="8" strokeDasharray={c} strokeDashoffset={c-(pct/100)*c} style={{transform:'rotate(-90deg)',transformOrigin:'center',transition:'stroke-dashoffset 0.9s linear'}}/>
-        <text x="56" y="52" textAnchor="middle" fontSize="26" fontWeight="700" fill="var(--tx)">{left}</text>
-        <text x="56" y="70" textAnchor="middle" fontSize="11" fill="var(--tx3)">초</text>
-      </svg>
-      {done?(<div style={{color:'var(--s)',fontWeight:700,fontSize:15,padding:'8px 20px',background:'var(--s2)',borderRadius:8}}>✅ 유지 완료!</div>):(
-        <div style={{display:'flex',gap:8}}>
-          <button className="btn btn-p" style={{width:100,padding:'10px 0',fontSize:14}} onClick={()=>setRunning(r=>!r)}>{running?<Pause size={15}/>:<Play size={15}/>}{running?'일시정지':'시작'}</button>
-          <button className="btn btn-g" style={{width:44,padding:'10px 0'}} onClick={reset}><RotateCcw size={15}/></button>
-        </div>
-      )}
-    </div>
-  );
+function mkGull(os=true){return{x:os?GW+80+Math.random()*200:Math.random()*GW,y:30+Math.random()*70,speed:0.8+Math.random()*1.0,fp:Math.random()*Math.PI*2,sz:14+Math.random()*10,vyp:Math.random()*Math.PI*2};}
+function mkCloud(init=false){return{x:init?Math.random()*GW:GW+120,y:12+Math.random()*80,w:65+Math.random()*100,speed:0.25+Math.random()*0.35,alpha:0.65+Math.random()*0.3};}
+function mkUFish(){return{x:Math.random()*GW,y:290+Math.random()*200,speed:0.3+Math.random()*0.8,dir:Math.random()<0.5?1:-1,sz:10+Math.random()*18,color:['#5b9fcc','#cc8844','#44cc88','#cc5566','#aacc44','#cc44aa'][Math.floor(Math.random()*6)],alpha:0.35+Math.random()*0.30,ph:Math.random()*Math.PI*2};}
+function mkDolphin(){return{x:Math.random()*GW,y:GH*0.44,speed:2.5+Math.random()*1.5,dir:Math.random()<0.5?1:-1,jumpPhase:Math.random()*Math.PI*2,groundY:GH*0.44};}
+function mkWhale(){return{x:-200,y:GH*0.52,speed:0.4,dir:1,spoutTimer:0};}
+function mkShark(){return{x:GW+100,y:320+Math.random()*80,speed:0.6+Math.random()*0.4,dir:-1,ph:Math.random()*Math.PI*2};}
+
+function spawnParticles(x,y,color,count=20){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2;
+    const sp=3+Math.random()*8;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-3,life:1,color,sz:4+Math.random()*8,rot:Math.random()*Math.PI*2});
+  }
 }
 
-/* ─── 운동 상세 ─── */
-function ExerciseDetail({ex,exercises,completed,onBack,onComplete}){
-  const [tab,setTab]=useState('guide');
-  const [set,setSet]=useState(0);
-  const [rep,setRep]=useState(0);
-  const [showPraise,setShowPraise]=useState(false);
-  const [praiseMsg,setPraiseMsg]=useState('');
-  const totalSets=ex.sets||1,totalReps=ex.reps||1,allSetsD=set>=totalSets;
-  const hasPostureImage=!!ILLUS_IMAGES[ex.id];
-  const isCompleted=!!completed[ex.id];
-  const currentIdx=exercises.findIndex(e=>e.id===ex.id);
+function drawScene(){
+  const night=isNight();const wY=GH*0.44;
 
-  const addRep=()=>{
-    if(allSetsD)return;
-    if(rep+1>=totalReps){setRep(0);setSet(s=>s+1);}else setRep(r=>r+1);
-  };
+  const sk=GX.createLinearGradient(0,0,0,wY);
+  if(night){
+    sk.addColorStop(0,'#0a1840');
+    sk.addColorStop(1,'#1a3a6a');
+  }else{
+    sk.addColorStop(0,'#55c8ff');
+    sk.addColorStop(1,'#b8eaff');
+  }
+  GX.fillStyle=sk;GX.fillRect(0,0,GW,wY);
 
-  const handleMark=()=>{
-    const msg=PRAISE[Math.floor(Math.random()*PRAISE.length)];
-    setPraiseMsg(msg);
-    setShowPraise(true);
-    onComplete();
-  };
+  if(night){
+    GX.fillStyle='#fff';
+    [[0.08,0.06],[0.25,0.04],[0.45,0.1],[0.68,0.03],[0.82,0.08],[0.15,0.13],[0.55,0.05],[0.9,0.12]].forEach(([rx,ry])=>{
+      GX.globalAlpha=(0.5+Math.sin(waveTick*0.04+rx*8)*0.5)*0.9;
+      GX.beginPath();GX.arc(rx*GW,ry*GH,1.8,0,Math.PI*2);GX.fill();
+    });
+    GX.globalAlpha=1;
+    GX.fillStyle='#fffde0';GX.shadowColor='#fffde0';GX.shadowBlur=28;
+    GX.beginPath();GX.arc(GW-90,48,24,0,Math.PI*2);GX.fill();
+    GX.fillStyle='#0e1e40';GX.shadowBlur=0;
+    GX.beginPath();GX.arc(GW-80,42,20,0,Math.PI*2);GX.fill();
+  }else{
+    GX.fillStyle='#FFD700';GX.shadowColor='#FFD700';GX.shadowBlur=40;
+    GX.beginPath();GX.arc(GW-90,52,28,0,Math.PI*2);GX.fill();GX.shadowBlur=0;
+    GX.strokeStyle='rgba(255,210,0,0.3)';GX.lineWidth=3;
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2+waveTick*0.003;GX.beginPath();GX.moveTo(GW-90+Math.cos(a)*33,52+Math.sin(a)*33);GX.lineTo(GW-90+Math.cos(a)*50,52+Math.sin(a)*50);GX.stroke();}
+  }
 
-  return(
-    <div className="screen slide" style={{paddingBottom:80}}>
-      {/* 헤더 */}
-      <div style={{background:'var(--p)',padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
-        <button onClick={onBack} style={{background:'rgba(255,255,255,.2)',border:'none',borderRadius:8,padding:8,cursor:'pointer',color:'#fff',display:'flex'}}><ChevronLeft size={20}/></button>
-        <div style={{flex:1}}>
-          <div style={{color:'rgba(255,255,255,.8)',fontSize:12}}>{ex.nameEn}</div>
-          <div style={{color:'#fff',fontSize:17,fontWeight:700}}>{ex.name}</div>
-        </div>
-        <div style={{background:'rgba(255,255,255,.2)',borderRadius:8,padding:'4px 10px'}}>
-          <span style={{fontSize:12,color:'#fff',fontWeight:600}}>{currentIdx+1}/{exercises.length}</span>
-        </div>
-        {isCompleted&&<CheckCircle size={22} color="#fff"/>}
-      </div>
-
-      <div style={{padding:16}}>
-        {/* 탭 */}
-        <div style={{display:'flex',background:'var(--sur2)',borderRadius:10,padding:3,marginBottom:16}}>
-          {[['guide','📋 운동 안내'],['exec','▶ 운동 실행']].map(([k,label])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{flex:1,border:'none',borderRadius:8,padding:'10px 0',fontSize:13,fontWeight:600,cursor:'pointer',background:tab===k?'var(--sur)':'transparent',color:tab===k?'var(--p)':'var(--tx3)',transition:'all .2s',boxShadow:tab===k?'0 1px 3px rgba(0,0,0,.1)':'none'}}>{label}</button>
-          ))}
-        </div>
-
-        {/* 운동 안내 탭 */}
-        {tab==='guide'&&(
-          <div className="fade">
-            <div className="card" style={{marginBottom:12}}>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-                {[['📍 자세',ex.pos],['🔁 세트',ex.sets?`${ex.sets}세트`:'—'],['📊 횟수',ex.reps?`${ex.reps}회`:(ex.unit||'—')],['⏱ 유지',ex.hold?`${ex.hold}초`:'—']].map(([l,v])=>(
-                  <div key={l} style={{background:'var(--sur2)',borderRadius:8,padding:'8px 10px'}}>
-                    <div style={{fontSize:11,color:'var(--tx3)',marginBottom:2}}>{l}</div>
-                    <div style={{fontSize:14,fontWeight:600,color:'var(--tx)'}}>{v}</div>
-                  </div>
-                ))}
-              </div>
-              <p style={{fontSize:14,color:'var(--tx2)',lineHeight:1.65}}>{ex.desc}</p>
-            </div>
-
-            {/* ── 자세 이미지 영역 (SVG 삽화 대체) ── */}
-            {hasPostureImage && <PostureImages exId={ex.id}/>}
-
-            {ex.ok&&(<div className="card" style={{marginBottom:12,border:'1.5px solid var(--s)'}}><div style={{fontSize:13,fontWeight:700,color:'var(--s)',marginBottom:8}}>✅ 올바른 동작</div>{ex.ok.map((o,i)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<ex.ok.length-1?6:0}}><Check size={14} color="var(--s)" style={{marginTop:2,flexShrink:0}}/><span style={{fontSize:13,color:'var(--tx2)'}}>{o}</span></div>)}</div>)}
-            {ex.ng&&(<div className="card" style={{border:'1.5px solid var(--d)'}}><div style={{fontSize:13,fontWeight:700,color:'var(--d)',marginBottom:8}}>⚠️ 이렇게 하지 마세요</div>{ex.ng.map((n,i)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<ex.ng.length-1?6:0}}><X size={14} color="var(--d)" style={{marginTop:2,flexShrink:0}}/><span style={{fontSize:13,color:'var(--tx2)'}}>{n}</span></div>)}</div>)}
-          </div>
-        )}
-
-        {/* 운동 실행 탭 */}
-        {tab==='exec'&&(
-          <div className="fade">
-            <div className="card" style={{marginBottom:12,textAlign:'center'}}>
-              <div style={{fontSize:13,color:'var(--tx2)',marginBottom:10,fontWeight:600}}>세트 진행</div>
-              <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:8}}>
-                {Array.from({length:totalSets}).map((_,i)=>(
-                  <div key={i} style={{width:36,height:36,borderRadius:'50%',background:i<set?'var(--s)':set===i?'var(--p)':'var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,color:i<=set?'#fff':'var(--tx3)',transition:'all .3s'}}>
-                    {i<set?'✓':i+1}
-                  </div>
-                ))}
-              </div>
-              <div style={{fontSize:13,color:'var(--tx2)'}}>{allSetsD?<span style={{color:'var(--s)',fontWeight:700}}>🎉 모든 세트 완료!</span>:<span>현재 <strong style={{color:'var(--p)'}}>{set+1}세트</strong> 진행 중</span>}</div>
-            </div>
-
-            {ex.hold&&!allSetsD&&(
-              <div className="card" style={{marginBottom:12,textAlign:'center'}}>
-                <div style={{fontSize:13,fontWeight:700,color:'var(--tx)',marginBottom:14}}>{ex.hold}초 유지 타이머</div>
-                <ExerciseTimer key={`${set}-${rep}`} holdTime={ex.hold} onAutoRep={addRep}/>
-              </div>
-            )}
-
-            {!ex.isPassive&&(
-              <div className="card" style={{marginBottom:12}}>
-                <div style={{fontSize:13,fontWeight:700,color:'var(--tx)',marginBottom:12,textAlign:'center'}}>횟수 카운터</div>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:14}}>
-                  <div style={{textAlign:'center'}}>
-                    <div style={{fontSize:52,fontWeight:900,color:'var(--p)',lineHeight:1}}>{rep}</div>
-                    <div style={{fontSize:13,color:'var(--tx3)'}}>/ {totalReps} 회</div>
-                  </div>
-                  <div style={{width:1,height:60,background:'var(--bd)'}}/>
-                  <div style={{textAlign:'center'}}>
-                    <div style={{fontSize:52,fontWeight:900,color:allSetsD?'var(--s)':'var(--tx2)',lineHeight:1}}>{set}</div>
-                    <div style={{fontSize:13,color:'var(--tx3)'}}>/ {totalSets} 세트</div>
-                  </div>
-                </div>
-                <div style={{background:'var(--bd)',borderRadius:4,height:6,marginBottom:12,overflow:'hidden'}}>
-                  <div style={{background:'var(--p)',height:6,borderRadius:4,width:`${(rep/totalReps)*100}%`,transition:'width .3s'}}/>
-                </div>
-                {!allSetsD?(
-                  <button className="btn btn-p" onClick={addRep}><Zap size={18}/> 횟수 카운트 +1 ({rep+1}/{totalReps})</button>
-                ):(
-                  <div style={{padding:12,background:'var(--s2)',borderRadius:8,textAlign:'center',color:'var(--s)',fontWeight:700}}>✅ 모든 세트 완료!</div>
-                )}
-              </div>
-            )}
-
-            {!isCompleted?(
-              <button className="btn btn-s" onClick={handleMark} style={{fontSize:15}}>
-                <CheckCircle size={18}/> 운동 완료 체크
-              </button>
-            ):(
-              <div style={{background:'var(--s2)',border:'1.5px solid var(--s)',borderRadius:12,padding:14,textAlign:'center'}}>
-                <div style={{fontSize:20,marginBottom:4}}>✅</div>
-                <div style={{fontSize:14,fontWeight:700,color:'var(--s)'}}>완료된 운동입니다</div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── 단계 목표 카드 ─── */
-function PhaseGoalsCard({phase}){
-  const [open,setOpen]=useState(false);
-  const meta=PHASE_GOALS[phase];
-  if(!meta)return null;
-  return(
-    <div className="card" style={{marginBottom:14,border:`1px solid ${meta.color}40`}}>
-      <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',background:'none',border:'none',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',padding:0,fontFamily:'inherit'}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:8,height:8,borderRadius:'50%',background:meta.color}}/>
-          <span style={{fontSize:14,fontWeight:700,color:'var(--tx)'}}>{meta.name} 단계 목표</span>
-          <span style={{fontSize:11,color:'var(--tx3)',background:'var(--sur2)',padding:'2px 8px',borderRadius:6}}>{meta.period}</span>
-        </div>
-        {open?<ChevronUp size={18} color="var(--tx3)"/>:<ChevronDown size={18} color="var(--tx3)"/>}
-      </button>
-      {open&&(
-        <div className="fade" style={{marginTop:14}}>
-          <div style={{fontSize:12,fontWeight:700,color:meta.color,marginBottom:8}}>✅ 달성 목표</div>
-          {meta.goals.map((g,i)=>(
-            <div key={i} style={{display:'flex',gap:8,marginBottom:6,alignItems:'flex-start'}}>
-              <div style={{width:18,height:18,borderRadius:'50%',background:`${meta.color}20`,border:`1.5px solid ${meta.color}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
-                <Check size={10} color={meta.color}/>
-              </div>
-              <span style={{fontSize:13,color:'var(--tx2)',lineHeight:1.5}}>{g}</span>
-            </div>
-          ))}
-          <div style={{fontSize:12,fontWeight:700,color:'var(--w)',marginTop:12,marginBottom:8}}>⚠️ 주의사항</div>
-          {meta.cautions.map((c,i)=>(
-            <div key={i} style={{display:'flex',gap:8,marginBottom:5,alignItems:'flex-start'}}>
-              <span style={{color:'var(--w)',flexShrink:0,marginTop:2,fontSize:12}}>•</span>
-              <span style={{fontSize:12,color:'var(--tx2)',lineHeight:1.5}}>{c}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── 홈 화면 ─── */
-function HomeScreen({days,exercises,completed,onSelectEx,dailyNRS,praiseToast}){
-  const total=exercises.length,done=exercises.filter(e=>completed[e.id]).length;
-  const pct=total>0?(done/total)*100:0;
-  const phase=getPhase(days);
-  const wk=days<=7?0:days<=14?2:days<=28?3:days<=42?5:7;
-  return(
-    <div className="screen">
-      <div style={{background:'var(--p)',padding:'20px 16px 28px',borderBottomLeftRadius:24,borderBottomRightRadius:24}}>
-        <div style={{fontSize:12,color:'rgba(255,255,255,.8)',marginBottom:4}}>{dayLabel(days)}</div>
-        <div style={{fontSize:22,fontWeight:700,color:'#fff',marginBottom:8}}>오늘의 재활 운동</div>
-        <div style={{background:'rgba(255,255,255,.2)',borderRadius:8,padding:'6px 10px',display:'inline-block'}}>
-          <span style={{fontSize:12,color:'#fff',fontWeight:600}}>{PHASE_GOALS[phase]?.name}</span>
-        </div>
-      </div>
-      <div style={{padding:16,marginTop:-12}}>
-        {praiseToast&&(
-          <div className="praise" style={{background:'linear-gradient(135deg,var(--s2),var(--p2))',border:'1.5px solid var(--s)',borderRadius:12,padding:'12px 16px',marginBottom:14,display:'flex',alignItems:'center',gap:12}}>
-            <span style={{fontSize:28}}>✅</span>
-            <div>
-              <div style={{fontSize:13,fontWeight:700,color:'var(--s)',marginBottom:2}}>운동 완료!</div>
-              <div style={{fontSize:13,color:'var(--tx2)'}}>{praiseToast}</div>
-            </div>
-          </div>
-        )}
-        <div className="card" style={{display:'flex',alignItems:'center',gap:16,marginBottom:14}}>
-          <ProgressRing pct={pct} size={72} stroke={7} color={pct===100?'var(--s)':'var(--p)'}/>
-          <div style={{flex:1}}>
-            <div style={{fontSize:13,color:'var(--tx2)',marginBottom:4}}>오늘의 진행률</div>
-            <div style={{fontSize:20,fontWeight:700,color:'var(--tx)'}}>{done} / {total} 완료</div>
-            <div style={{background:'var(--bd)',borderRadius:4,height:6,marginTop:8}}>
-              <div style={{background:pct===100?'var(--s)':'var(--p)',borderRadius:4,height:6,width:`${pct}%`,transition:'width .6s'}}/>
-            </div>
-          </div>
-          {pct===100&&<Trophy size={28} color="var(--w)" className="bounce"/>}
-        </div>
-
-        {dailyNRS!==null&&(
-          <div style={{background:dailyNRS<4?'var(--s2)':dailyNRS<7?'var(--w2)':'var(--d2)',border:`1px solid ${dailyNRS<4?'var(--s)':dailyNRS<7?'var(--w)':'var(--d)'}`,borderRadius:10,padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:22}}>🩺</span>
-            <div>
-              <div style={{fontSize:12,color:'var(--tx2)',marginBottom:2}}>오늘의 통증 기록 (NRS)</div>
-              <div style={{fontSize:15,fontWeight:700,color:dailyNRS<4?'var(--s)':dailyNRS<7?'var(--w)':'var(--d)'}}>{dailyNRS}점 — {dailyNRS<4?'양호':dailyNRS<7?'주의 필요':'의료진 상담 필요'}</div>
-            </div>
-          </div>
-        )}
-
-        <div className="card" style={{marginBottom:14,border:'1px solid var(--p)',background:'var(--p2)'}}>
-          <div style={{fontSize:12,color:'var(--p3)',fontWeight:600,marginBottom:4}}>🎯 이번 주 목표</div>
-          <div style={{fontSize:14,fontWeight:600,color:'var(--tx)'}}>{WEEK_GOALS[wk]||'꾸준히 재활 운동을 지속하세요'}</div>
-        </div>
-
-        <PhaseGoalsCard phase={phase}/>
-
-        <div style={{fontSize:14,fontWeight:700,color:'var(--tx)',marginBottom:10}}>오늘의 운동 ({total}가지)</div>
-        {exercises.map((ex,i)=>{
-          const c=completed[ex.id];
-          const isNext=!c&&exercises.slice(0,i).every(e=>completed[e.id]);
-          return(
-            <div key={ex.id} className="card" style={{marginBottom:10,cursor:'pointer',display:'flex',alignItems:'center',gap:12,border:c?'1px solid var(--s)':isNext?'1.5px solid var(--p)':'1px solid var(--bd)',background:isNext&&!c?'var(--p2)':'var(--sur)'}} onClick={()=>onSelectEx(ex)}>
-              <div style={{fontSize:24,width:38,textAlign:'center'}}>{ex.icon}</div>
-              <div style={{flex:1}}>
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
-                  <span style={{fontSize:14,fontWeight:600,color:c?'var(--s)':isNext?'var(--p)':'var(--tx)'}}>{ex.name}</span>
-                  {isNext&&<span style={{fontSize:10,background:'var(--p)',color:'#fff',padding:'1px 6px',borderRadius:4,fontWeight:600}}>다음</span>}
-                </div>
-                <div style={{fontSize:12,color:'var(--tx3)'}}>{ex.pos}{ex.sets?` · ${ex.sets}세트`:''}{ex.reps?` · ${ex.reps}회`:''}{ex.hold?` · ${ex.hold}초 유지`:''}</div>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:6}}>
-                {c?<CheckCircle size={22} color="var(--s)"/>:<Circle size={22} color={isNext?'var(--p)':'var(--tx3)'}/>}
-                <ChevronRight size={16} color="var(--tx3)"/>
-              </div>
-            </div>
-          );
-        })}
-
-        <div style={{background:'var(--w2)',border:'1px solid var(--w)',borderRadius:12,padding:14,marginTop:4}}>
-          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}><AlertTriangle size={16} color="var(--w)"/><span style={{fontSize:13,fontWeight:700,color:'#92400E'}}>운동 전 주의사항</span></div>
-          <div style={{fontSize:12,color:'#78350F',lineHeight:1.6}}>• 통증 NRS 4점 이상 시 운동 중단 후 의료진 상담<br/>• DVT 예방: 발목 펌프 30분마다 시행<br/>• 수술 부위 피부 매일 확인<br/>• 전문의와 상의 후 운동하세요</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── NRS 화면 ─── */
-function NRSDailyCheck({onConfirm}){
-  const [nrs,setNrs]=useState(0);
-  const nrsColor=nrs<4?'var(--s)':nrs<7?'var(--w)':'var(--d)';
-  const dots=Array.from({length:16},(_,i)=>({x:Math.random()*100,color:['#0EA5E9','#22C55E','#F59E0B','#EF4444','#8B5CF6'][i%5],delay:Math.random()*0.6,size:Math.random()*10+5}));
-  return(
-    <div className="screen slide" style={{paddingBottom:80,position:'relative',overflow:'hidden'}}>
-      {dots.map((d,i)=><div key={i} style={{position:'absolute',left:`${d.x}%`,top:0,width:d.size,height:d.size,background:d.color,borderRadius:2,animation:`confetti 2s ease-in ${d.delay}s both`,pointerEvents:'none'}}/>)}
-      <div style={{background:'var(--s)',padding:'24px 16px 32px',borderBottomLeftRadius:24,borderBottomRightRadius:24,textAlign:'center'}}>
-        <div style={{fontSize:52,marginBottom:8}}>🏆</div>
-        <div style={{fontSize:20,fontWeight:700,color:'#fff',marginBottom:6}}>오늘의 운동 모두 완료!</div>
-        <div style={{fontSize:14,color:'rgba(255,255,255,.85)'}}>정말 잘 하셨어요! 꾸준함이 회복의 열쇠입니다.</div>
-      </div>
-      <div style={{padding:16}}>
-        <div className="card" style={{marginBottom:14}}>
-          <h3 style={{fontSize:16,fontWeight:700,marginBottom:6,color:'var(--tx)'}}>📊 오늘의 통증 기록 (NRS)</h3>
-          <p style={{fontSize:13,color:'var(--tx2)',marginBottom:16,lineHeight:1.6}}>오늘 운동 중 느꼈던 최대 통증 강도를 기록해 주세요.<br/>이 기록은 하루에 한 번만 저장됩니다.</p>
-          <div style={{textAlign:'center',marginBottom:14}}>
-            <span style={{fontSize:64,fontWeight:900,color:nrsColor,lineHeight:1}}>{nrs}</span>
-            <span style={{fontSize:18,color:'var(--tx2)'}}>/10</span>
-          </div>
-          <input type="range" min="0" max="10" step="1" value={nrs} onChange={e=>setNrs(+e.target.value)} className="nrs-track" style={{marginBottom:8}}/>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--tx3)',marginBottom:16}}><span>0 통증 없음</span><span>5 중등도</span><span>10 극심</span></div>
-          <div style={{background:nrs<4?'var(--s2)':nrs<7?'var(--w2)':'var(--d2)',border:`1.5px solid ${nrsColor}`,borderRadius:10,padding:12}}>
-            <div style={{fontWeight:700,color:nrsColor,fontSize:14,marginBottom:3}}>
-              {nrs<4?'✅ 양호':nrs<7?'⚠️ 주의 필요':'🚫 의료진 상담 필요'}
-            </div>
-            <div style={{fontSize:13,color:'var(--tx2)'}}>{nrs<4?'통증이 없거나 경미합니다. 내일도 운동을 지속하세요.':nrs<7?'통증이 중등도입니다. 전문의와 상의 후 다음 운동을 계획하세요.':'심한 통증이 발생했습니다. 즉시 의료진에게 알려주세요.'}</div>
-          </div>
-        </div>
-        {nrs>=4&&(<button className="btn btn-d" style={{marginBottom:12}} onClick={()=>alert('간호사 호출 기능\n실제 앱에서는 병동 호출 시스템과 연동됩니다.')}><Phone size={18}/> 간호사 호출 (원터치)</button>)}
-        <div style={{fontSize:12,color:'var(--d)',textAlign:'center',marginBottom:16,fontWeight:600}}>전문의와 상의 후 운동하세요</div>
-        <button className="btn btn-p" onClick={()=>onConfirm(nrs)} style={{fontSize:15}}><Check size={18}/> 통증 기록 완료 및 홈으로</button>
-      </div>
-    </div>
-  );
-}
-
-/* ─── 주간 바 차트 ─── */
-function WeeklyBarChart({completionHistory,todayExTotal}){
-  const today=new Date(); today.setHours(0,0,0,0);
-  const todayStr=getTodayStr();
-  const weekDays=getWeekDays();
-  const dayNames=['일','월','화','수','목','금','토'];
-  const W=320,H=110,barW=30,gap=(W-barW*7)/6;
-  const data=weekDays.map((d,i)=>{
-    const str=toDateStr(d);
-    const isFuture=d>today&&str!==todayStr;
-    const isToday=str===todayStr;
-    const hist=completionHistory[str];
-    const done=hist?.done||0;
-    const total=isToday?(hist?.total||todayExTotal):hist?.total||0;
-    const pct=total>0?done/total:0;
-    return{str,done,total,pct,isFuture,isToday,dayName:dayNames[i]};
+  clouds.forEach(c=>{
+    GX.save();GX.globalAlpha=c.alpha*(night?0.5:1);
+    GX.fillStyle=night?'#c0d0e8':'#fff';
+    const{x,y,w}=c;
+    GX.beginPath();GX.arc(x,y,w*0.27,0,Math.PI*2);GX.arc(x+w*0.22,y-w*0.08,w*0.19,0,Math.PI*2);GX.arc(x+w*0.46,y,w*0.23,0,Math.PI*2);GX.arc(x-w*0.16,y+w*0.04,w*0.17,0,Math.PI*2);GX.fill();GX.restore();
   });
-  const maxTotal=Math.max(...data.map(d=>d.total),1);
-  return(
-    <div>
-      <svg width="100%" viewBox={`0 0 ${W+40} ${H+50}`} style={{display:'block'}}>
-        {[0.25,0.5,0.75,1].map(v=><line key={v} x1="28" y1={H-v*H} x2={W+28} y2={H-v*H} stroke="var(--bd)" strokeWidth="0.8" strokeDasharray="4"/>)}
-        {data.map(({done,total,pct,isFuture,isToday,dayName},i)=>{
-          const x=28+i*(barW+gap);
-          const bh=Math.max(pct*H,total>0?4:0);
-          const fill=isFuture||!total?'transparent':pct>=1?'var(--s)':isToday?'var(--p)':'#94A3B8';
-          return(
-            <g key={dayName}>
-              <rect x={x} y={0} width={barW} height={H} rx={6} fill={isFuture?'#F1F5F9':'var(--sur2)'}/>
-              {!isFuture&&total>0&&<rect x={x} y={H-bh} width={barW} height={bh} rx={Math.min(bh,6)} fill={fill}/>}
-              {!isFuture&&total>0&&done>0&&<text x={x+barW/2} y={H-bh-6} textAnchor="middle" fontSize="9" fontWeight="700" fill={fill}>{done}</text>}
-              <text x={x+barW/2} y={H+18} textAnchor="middle" fontSize="13" fontWeight={isToday?'700':'400'} fill={isToday?'var(--p)':'var(--tx3)'}>{dayName}</text>
-              {isToday&&<circle cx={x+barW/2} cy={H+30} r="3" fill="var(--p)"/>}
-              {!isFuture&&total>0&&<text x={x+barW/2} y={H+44} textAnchor="middle" fontSize="9" fill="var(--tx3)">{total}</text>}
-            </g>
-          );
-        })}
-        {[0,Math.round(maxTotal/2),maxTotal].map((v,i)=><text key={i} x="22" y={H-(v/maxTotal)*H+4} textAnchor="end" fontSize="9" fill="var(--tx3)">{v}</text>)}
-      </svg>
-      <div style={{display:'flex',gap:12,padding:'2px 8px 6px',flexWrap:'wrap'}}>
-        {[{c:'var(--s)',l:'달성'},{c:'var(--p)',l:'오늘'},{c:'#94A3B8',l:'진행 중'}].map(({c,l})=>(
-          <div key={l} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'var(--tx2)'}}>
-            <div style={{width:10,height:10,borderRadius:2,background:c}}/>{l}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+
+  seagulls.forEach(s=>drawGull(s,night));
+
+  const sea=GX.createLinearGradient(0,wY,0,GH);
+  if(night){
+    sea.addColorStop(0,'#1a3860');
+    sea.addColorStop(0.4,'#0e2040');
+    sea.addColorStop(1,'#061020');
+  }else{
+    sea.addColorStop(0,'#38b8e8');
+    sea.addColorStop(0.35,'#1e88c8');
+    sea.addColorStop(1,'#0e4888');
+  }
+  GX.fillStyle=sea;GX.beginPath();GX.moveTo(0,wY);
+  for(let x=0;x<=GW;x+=8)GX.lineTo(x,wY+Math.sin(x*0.022+waveTick*0.04)*7+Math.sin(x*0.04+waveTick*0.028)*4);
+  GX.lineTo(GW,GH);GX.lineTo(0,GH);GX.closePath();GX.fill();
+
+  for(let row=0;row<3;row++){
+    const alpha=night?(0.28-row*0.06):(0.38-row*0.08);
+    GX.strokeStyle=night?`rgba(100,160,220,${alpha})`:`rgba(255,255,255,${alpha})`;
+    GX.lineWidth=row===0?2:1.5;GX.beginPath();
+    for(let x=0;x<=GW;x+=6){
+      const wy=wY+row*22+Math.sin(x*0.022+waveTick*0.04)*7+Math.sin(x*0.04+waveTick*0.028)*4;
+      x===0?GX.moveTo(x,wy):GX.lineTo(x,wy);
+    }GX.stroke();
+  }
+
+  whales.forEach(w=>drawWhale(w,night));
+  sharks.forEach(s=>drawShark(s,night));
+  dolphins.forEach(d=>drawDolphin(d,night));
+
+  underwaterFish.forEach(f=>{
+    const bob=Math.sin(f.ph+waveTick*0.018)*4;
+    GX.save();GX.globalAlpha=f.alpha*(night?0.65:1.0);
+    GX.translate(f.x,f.y+bob);GX.scale(f.dir,1);GX.fillStyle=f.color;
+    const sz=f.sz;
+    GX.beginPath();GX.ellipse(0,0,sz,sz*0.5,0,0,Math.PI*2);GX.fill();
+    GX.beginPath();GX.moveTo(-sz,0);GX.lineTo(-sz*1.4,-sz*0.38);GX.lineTo(-sz*1.4,sz*0.38);GX.closePath();GX.fill();
+    GX.fillStyle='rgba(255,255,255,0.75)';GX.beginPath();GX.arc(sz*0.5,-sz*0.12,sz*0.18,0,Math.PI*2);GX.fill();
+    GX.fillStyle='#111';GX.beginPath();GX.arc(sz*0.54,-sz*0.12,sz*0.09,0,Math.PI*2);GX.fill();
+    GX.restore();
+  });
+
+  bubbles.forEach(b=>{
+    GX.save();GX.globalAlpha=b.life*0.6;GX.strokeStyle='rgba(160,220,255,0.9)';GX.lineWidth=1;
+    GX.beginPath();GX.arc(b.x,b.y,b.sz,0,Math.PI*2);GX.stroke();GX.restore();
+  });
+
+  splashParts.forEach(p=>{
+    GX.save();GX.globalAlpha=p.life*0.8;
+    GX.fillStyle=night?'rgba(80,140,220,0.9)':'rgba(150,220,255,0.9)';
+    GX.beginPath();GX.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);GX.fill();GX.restore();
+  });
 }
 
-/* ─── 기록 화면 ─── */
-function ProgressScreen({completionHistory,days,exercises,dailyNRS}){
-  const phase=getPhase(days),weeks=Math.floor(days/7);
-  const todayHist=completionHistory[getTodayStr()];
-  return(
-    <div className="screen slide" style={{padding:'20px 16px 80px'}}>
-      <h2 style={{fontSize:20,fontWeight:700,marginBottom:16,color:'var(--tx)'}}>📊 재활 기록</h2>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-        {[{label:'수술 후 경과',val:`${days}일`,icon:'📅'},{label:'현재 단계',val:`Phase ${phase}`,icon:'🏥'},{label:'오늘 완료',val:`${todayHist?.done||0}/${todayHist?.total||exercises.length}`,icon:'✅'},{label:'오늘 통증',val:dailyNRS!==null?`NRS ${dailyNRS}점`:'미기록',icon:'🩺'}].map(({label,val,icon})=>(
-          <div key={label} style={{background:'var(--sur)',border:'1px solid var(--bd)',borderRadius:12,padding:'14px 12px'}}>
-            <div style={{fontSize:20,marginBottom:4}}>{icon}</div>
-            <div style={{fontSize:12,color:'var(--tx3)',marginBottom:2}}>{label}</div>
-            <div style={{fontSize:16,fontWeight:700,color:'var(--tx)'}}>{val}</div>
-          </div>
-        ))}
-      </div>
-      <div className="card" style={{marginBottom:14}}>
-        <div style={{fontSize:14,fontWeight:700,marginBottom:4,color:'var(--tx)'}}>이번 주 운동 현황</div>
-        <div style={{fontSize:12,color:'var(--tx3)',marginBottom:12}}>{new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} 기준</div>
-        <WeeklyBarChart completionHistory={completionHistory} todayExTotal={exercises.length}/>
-      </div>
-      {[1,2,3].map(ph=><PhaseGoalsCard key={ph} phase={ph}/>)}
-    </div>
-  );
+function drawGull(s,night){
+  const flap=Math.sin(s.fp)*0.5;
+  GX.save();GX.translate(s.x,s.y);GX.scale(-1,1);
+  GX.fillStyle=night?'rgba(190,200,220,0.85)':'rgba(245,245,245,0.95)';
+  GX.strokeStyle=night?'rgba(120,130,160,0.6)':'rgba(80,80,80,0.7)';GX.lineWidth=1.4;GX.lineCap='round';
+  GX.beginPath();GX.ellipse(0,0,s.sz*0.45,s.sz*0.18,0,0,Math.PI*2);GX.fill();
+  [[-1],[1]].forEach(([sd])=>{
+    GX.beginPath();GX.moveTo(sd*s.sz*0.1,0);GX.quadraticCurveTo(sd*s.sz*0.52,-s.sz*0.45*flap,sd*s.sz*0.92,-s.sz*0.07*flap);GX.quadraticCurveTo(sd*s.sz*0.52,s.sz*0.08,sd*s.sz*0.1,s.sz*0.04);GX.closePath();GX.fill();GX.stroke();
+  });
+  GX.fillStyle='#e8a020';GX.beginPath();GX.moveTo(s.sz*0.48,-s.sz*0.03);GX.lineTo(s.sz*0.74,-s.sz*0.08);GX.lineTo(s.sz*0.48,s.sz*0.04);GX.closePath();GX.fill();
+  GX.restore();
 }
 
-/* ─── 설정 화면 ─── */
-function SettingsScreen({dark,setDark,fontSize,setFontSize,notif,setNotif,surgeryDate,setSurgeryDate}){
-  const [mute,setMute]=useState(false);
-  const [avatar,setAvatar]=useState(0);
-  return(
-    <div className="screen slide" style={{padding:'20px 16px 80px'}}>
-      <h2 style={{fontSize:20,fontWeight:700,marginBottom:16,color:'var(--tx)'}}>⚙️ 설정</h2>
-      <div className="card" style={{marginBottom:14}}><div style={{fontSize:14,fontWeight:700,marginBottom:10,color:'var(--tx)'}}>📅 수술 날짜 변경</div><input type="date" value={surgeryDate} onChange={e=>setSurgeryDate(e.target.value)} max={new Date().toISOString().split('T')[0]} style={{width:'100%',padding:'10px 12px',border:'1px solid var(--bd)',borderRadius:8,fontSize:14,background:'var(--sur)',color:'var(--tx)',fontFamily:'inherit'}}/></div>
-      <div className="card" style={{marginBottom:14}}>
-        <div style={{fontSize:14,fontWeight:700,marginBottom:12,color:'var(--tx)'}}>🎨 테마 설정</div>
-        <div style={{display:'flex',gap:10,marginBottom:14}}>
-          {[{k:false,label:'밝은 테마',icon:<Sun size={16}/>},{k:true,label:'어두운 테마',icon:<Moon size={16}/>}].map(({k,label,icon})=>(
-            <button key={String(k)} onClick={()=>setDark(k)} style={{flex:1,padding:10,border:`1.5px solid ${dark===k?'var(--p)':'var(--bd)'}`,borderRadius:8,background:dark===k?'var(--p2)':'var(--sur)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,color:dark===k?'var(--p)':'var(--tx2)',fontWeight:600,fontSize:13}}>{icon}{label}</button>
-          ))}
-        </div>
-        <div style={{fontSize:13,fontWeight:600,color:'var(--tx2)',marginBottom:8}}>글자 크기</div>
-        <div style={{display:'flex',gap:8}}>
-          {['작게','보통','크게'].map((s,i)=><button key={s} onClick={()=>setFontSize(i)} style={{flex:1,padding:'8px 0',border:`1.5px solid ${fontSize===i?'var(--p)':'var(--bd)'}`,borderRadius:8,background:fontSize===i?'var(--p2)':'var(--sur)',cursor:'pointer',fontSize:[12,14,16][i],color:fontSize===i?'var(--p)':'var(--tx2)',fontWeight:600}}>{s}</button>)}
-        </div>
-      </div>
-      <div className="card" style={{marginBottom:14}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-          <span style={{fontSize:14,fontWeight:700,color:'var(--tx)'}}>🔔 알림 설정</span>
-          <button onClick={()=>setNotif(!notif)} style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',background:notif?'var(--p)':'var(--bd)',transition:'background .2s',position:'relative'}}><div style={{width:18,height:18,borderRadius:'50%',background:'#fff',position:'absolute',top:3,left:notif?22:3,transition:'left .2s'}}/></button>
-        </div>
-        {notif&&['오전 10:00','오후 2:00','오후 7:00'].map(t=>(
-          <div key={t} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:'1px solid var(--bd)'}}><span style={{fontSize:13,color:'var(--tx)'}}>{t}</span><span style={{fontSize:11,background:'var(--p2)',color:'var(--p3)',padding:'3px 8px',borderRadius:6,fontWeight:600}}>활성</span></div>
-        ))}
-        {notif&&<button onClick={()=>setMute(m=>!m)} style={{display:'flex',gap:8,alignItems:'center',background:'transparent',border:'1px solid var(--bd)',borderRadius:8,padding:'8px 12px',cursor:'pointer',color:'var(--tx2)',fontSize:13,marginTop:10}}>{mute?<VolumeX size={16}/>:<Volume2 size={16}/>}{mute?'무음 모드 켜짐':'무음 모드 끄기'}</button>}
-      </div>
-      <div className="card" style={{marginBottom:14}}>
-        <div style={{fontSize:14,fontWeight:700,marginBottom:12,color:'var(--tx)'}}>🛡️ 안전 도구</div>
-        <button className="btn btn-d" style={{marginBottom:8}} onClick={()=>alert('간호사 호출 기능\n실제 앱에서는 병동 호출 시스템과 연동됩니다.')}><Phone size={18}/> 간호사 호출 (원터치)</button>
-        <p style={{fontSize:11,color:'var(--d)',textAlign:'center',fontWeight:600}}>전문의와 상의 후 운동하세요</p>
-      </div>
-      <div className="card"><div style={{fontSize:14,fontWeight:700,marginBottom:12,color:'var(--tx)'}}>👤 내 캐릭터</div><div style={{display:'flex',gap:10,flexWrap:'wrap'}}>{['🧑‍⚕️','👴','👵','🧑','👦','🦸'].map((em,i)=><button key={i} onClick={()=>setAvatar(i)} style={{width:52,height:52,fontSize:28,border:`2px solid ${avatar===i?'var(--p)':'var(--bd)'}`,borderRadius:12,background:avatar===i?'var(--p2)':'var(--sur2)',cursor:'pointer'}}>{em}</button>)}</div></div>
-    </div>
-  );
+function drawWhale(w,night){
+  GX.save();GX.globalAlpha=0.8;
+  const bc=night?'#2a4870':'#3a6898';
+  GX.fillStyle=bc;GX.beginPath();GX.ellipse(w.x,w.y,80,30,0,0,Math.PI*2);GX.fill();
+  GX.fillStyle=night?'#3a5878':'#b8d8e8';GX.beginPath();GX.ellipse(w.x+10,w.y+10,50,14,0,0,Math.PI*2);GX.fill();
+  GX.fillStyle=bc;if(w.dir===1){GX.beginPath();GX.moveTo(w.x-80,w.y);GX.lineTo(w.x-110,w.y-24);GX.lineTo(w.x-95,w.y);GX.lineTo(w.x-110,w.y+24);GX.closePath();GX.fill();}
+  GX.beginPath();GX.moveTo(w.x-10,w.y-30);GX.lineTo(w.x,w.y-52);GX.lineTo(w.x+15,w.y-30);GX.closePath();GX.fill();
+  GX.fillStyle='#fff';GX.beginPath();GX.arc(w.x+55,w.y-5,6,0,Math.PI*2);GX.fill();
+  GX.fillStyle='#111';GX.beginPath();GX.arc(w.x+56,w.y-5,3,0,Math.PI*2);GX.fill();GX.restore();
+}
+function drawShark(s,night){
+  GX.save();const bob=Math.sin(s.ph+waveTick*0.015)*6;GX.translate(s.x,s.y+bob);GX.scale(s.dir,1);GX.globalAlpha=0.75;
+  const c=night?'#2a4060':'#3a6080';
+  GX.fillStyle=c;GX.beginPath();GX.ellipse(0,0,55,18,0,0,Math.PI*2);GX.fill();
+  GX.fillStyle=night?'#3a5060':'#d0e0e0';GX.beginPath();GX.ellipse(8,6,35,10,0,0,Math.PI*2);GX.fill();
+  GX.fillStyle=c;GX.beginPath();GX.moveTo(-10,-18);GX.lineTo(0,-38);GX.lineTo(14,-18);GX.closePath();GX.fill();
+  GX.beginPath();GX.moveTo(-55,0);GX.lineTo(-75,-18);GX.lineTo(-62,0);GX.lineTo(-75,18);GX.closePath();GX.fill();
+  GX.fillStyle='#fff';GX.beginPath();GX.arc(40,-4,5,0,Math.PI*2);GX.fill();GX.fillStyle='#111';GX.beginPath();GX.arc(41,-4,2.5,0,Math.PI*2);GX.fill();GX.restore();
+}
+function drawDolphin(d,night){
+  GX.save();GX.translate(d.x,d.y);GX.scale(d.dir,1);GX.globalAlpha=0.88;
+  const c=night?'#3a6090':'#4a98d0';
+  GX.fillStyle=c;GX.beginPath();GX.ellipse(0,0,30,12,0,0,Math.PI*2);GX.fill();
+  GX.fillStyle=night?'#507090':'#c0daf0';GX.beginPath();GX.ellipse(8,4,18,6,0,0,Math.PI*2);GX.fill();
+  GX.fillStyle=c;GX.beginPath();GX.moveTo(-5,-12);GX.lineTo(0,-24);GX.lineTo(8,-12);GX.closePath();GX.fill();
+  GX.beginPath();GX.moveTo(-30,0);GX.lineTo(-44,-12);GX.lineTo(-36,0);GX.lineTo(-44,12);GX.closePath();GX.fill();
+  GX.fillStyle='#fff';GX.beginPath();GX.arc(22,-3,4,0,Math.PI*2);GX.fill();GX.fillStyle='#111';GX.beginPath();GX.arc(23,-3,2,0,Math.PI*2);GX.fill();GX.restore();
 }
 
-/* ─── 전체 운동 목록 ─── */
-function AllExercisesScreen({onSelect}){
-  const phases=[{title:'Phase I – 병원기 (1~7일)',exs:[...EX.d0,...EX.d1,...EX.d2,...EX.d3],c:'#0EA5E9'},{title:'Phase II – 2주차 (중점)',exs:EX.w2,c:'#22C55E'},{title:'Phase II – 3~4주차',exs:EX.w3,c:'#16A34A'},{title:'Phase III – 5~6주차',exs:EX.w5,c:'#8B5CF6'},{title:'Phase III – 7~8주차',exs:EX.w7,c:'#7C3AED'}];
-  return(
-    <div className="screen slide" style={{padding:'16px 16px 80px'}}>
-      <h2 style={{fontSize:20,fontWeight:700,marginBottom:16,color:'var(--tx)'}}>💪 전체 운동 목록</h2>
-      {phases.map(({title,exs,c})=>(
-        <div key={title} style={{marginBottom:16}}>
-          <div style={{fontSize:13,fontWeight:700,color:c,background:`${c}18`,borderRadius:8,padding:'6px 12px',marginBottom:8}}>{title}</div>
-          {exs.map(ex=>(
-            <div key={ex.id} className="card" style={{marginBottom:8,cursor:'pointer',display:'flex',alignItems:'center',gap:10}} onClick={()=>onSelect(ex)}>
-              <span style={{fontSize:22}}>{ex.icon}</span>
-              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{ex.name}</div><div style={{fontSize:11,color:'var(--tx3)'}}>{ex.pos}{ex.sets?` · ${ex.sets}세트`:''}{ex.reps?` · ${ex.reps}회`:''}{ex.hold?` · ${ex.hold}초`:''}</div></div>
-              <ChevronRight size={14} color="var(--tx3)"/>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
+function drawBoat(){
+  const wY=GH*0.44;
+  const bx=boatX;
+  const bwH=175;
+  const bob=Math.sin(waveTick*0.045)*3+Math.sin(waveTick*0.03)*2;
+  const tilt=Math.sin(waveTick*0.035)*0.022;
 
-/* ─── 온보딩 ─── */
-function OnboardingScreen({onConfirm}){
-  const [date,setDate]=useState('');
-  return(
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,background:'var(--bg)'}}>
-      <div style={{fontSize:68,marginBottom:12,textAlign:'center'}}>🦴</div>
-      <h1 style={{fontSize:24,fontWeight:700,color:'var(--tx)',textAlign:'center',marginBottom:6}}>고관절 재활 도우미</h1>
-      <p style={{fontSize:13,color:'var(--tx2)',textAlign:'center',marginBottom:24,lineHeight:1.7,maxWidth:300}}>
-        수술 후 체계적인 재활 운동을 도와드립니다.<br/>수술 날짜를 입력하면 D+N일 기준으로<br/>맞춤 운동을 안내해 드려요.
-      </p>
-      <div style={{background:'var(--sur)',border:'1px solid var(--bd)',borderRadius:12,padding:14,marginBottom:20,maxWidth:360,width:'100%'}}>
-        <div style={{fontSize:11,color:'var(--p3)',fontWeight:700,marginBottom:6}}>📚 참고 문헌</div>
-        <p style={{fontSize:11,color:'var(--tx2)',lineHeight:1.7}}>
-          본 가이드는 <strong>Gray et al., Open Reduction and Internal Fixation of the Hip (Chap. 21)</strong> 및{' '}
-          <strong>York and Scarborough Teaching Hospitals NHS Foundation Trust (PIL1724v1, 2025)</strong>를 기반으로 작성되었습니다.
-        </p>
-        <p style={{fontSize:11,color:'var(--d)',fontWeight:600,marginTop:8}}>
-          ⚠️ 모든 운동은 담당 의사 및 물리치료사의 지시에 따라 시행하십시오.
-        </p>
-      </div>
-      <div className="card" style={{width:'100%',maxWidth:360}}>
-        <label style={{fontSize:14,fontWeight:600,color:'var(--tx)',display:'block',marginBottom:8}}>수술 날짜 입력</label>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} max={new Date().toISOString().split('T')[0]}
-          style={{width:'100%',padding:'12px 14px',border:'1.5px solid var(--p)',borderRadius:10,fontSize:15,marginBottom:16,background:'var(--sur)',color:'var(--tx)',fontFamily:'inherit'}}/>
-        <button className="btn btn-p" disabled={!date} onClick={()=>onConfirm(date)} style={{opacity:date?1:0.5}}>
-          <Flame size={18}/> 재활 시작하기
-        </button>
-      </div>
-    </div>
-  );
-}
+  GX.save();GX.translate(bx,wY-2+bob);GX.rotate(tilt);
 
-/* ─── 하단 네비게이션 ─── */
-function BottomNav({tab,setTab}){
-  const items=[{k:'home',label:'홈',icon:<Home size={22}/>},{k:'exercises',label:'운동',icon:<Dumbbell size={22}/>},{k:'progress',label:'기록',icon:<BarChart2 size={22}/>},{k:'settings',label:'설정',icon:<Settings size={22}/>}];
-  return(
-    <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'var(--sur)',borderTop:'1px solid var(--bd)',display:'flex',zIndex:100}}>
-      {items.map(({k,label,icon})=>(
-        <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:'10px 0 8px',border:'none',background:'transparent',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:3,color:tab===k?'var(--p)':'var(--tx3)',fontFamily:'inherit',fontSize:11,fontWeight:tab===k?700:400,transition:'color .2s'}}>
-          {icon}{label}
-        </button>
-      ))}
-    </div>
-  );
-}
+  GX.fillStyle='#c85a20';GX.beginPath();GX.moveTo(-bwH,0);GX.lineTo(-bwH+12,36);GX.lineTo(bwH-12,36);GX.lineTo(bwH,0);GX.closePath();GX.fill();
+  GX.fillStyle='#dc7a2e';GX.fillRect(-bwH,0,bwH*2,10);
+  GX.strokeStyle='#a85010';GX.lineWidth=1.5;
+  for(let xi=-bwH+20;xi<bwH;xi+=22){GX.beginPath();GX.moveTo(xi,0);GX.lineTo(xi,10);GX.stroke();}
+  GX.fillStyle='#8a3808';GX.beginPath();GX.moveTo(-bwH+12,36);GX.lineTo(-bwH+18,44);GX.lineTo(bwH-18,44);GX.lineTo(bwH-12,36);GX.closePath();GX.fill();
+  GX.strokeStyle='#6a4010';GX.lineWidth=2;GX.beginPath();GX.moveTo(bwH-30,0);GX.lineTo(bwH-30,-58);GX.stroke();
+  GX.fillStyle='#FF6B9D';GX.beginPath();GX.moveTo(bwH-30,-58);GX.lineTo(bwH-30,-42);GX.lineTo(bwH-10,-50);GX.closePath();GX.fill();
 
-/* ─── 메인 앱 ─── */
-function App(){
-  const [surgeryDate,setSurgeryDate]=useState('');
-  const [dark,setDark]=useState(false);
-  const [fontSize,setFontSize]=useState(1);
-  const [tab,setTab]=useState('home');
-  const [selectedEx,setSelectedEx]=useState(null);
-  const [completed,setCompleted]=useState({});
-  const [notif,setNotif]=useState(true);
-  const [showNRS,setShowNRS]=useState(false);
-  const [dailyNRS,setDailyNRS]=useState(null);
-  const [completionHistory,setCompletionHistory]=useState({});
-  const [praiseToast,setPraiseToast]=useState('');
+  const pid=selectedPenguin||'normal';
+  const celebrating=celebrateTimer>0;
+  const isFishing=fishSt===FS.CATCHING||fishSt===FS.FLYING;
+  drawPenguin(GX,pid,-22,-68,34,{celebrate:celebrating,sweat:isFishing,fishing:isFishing});
 
-  const days=surgeryDate?Math.max(0,Math.floor((Date.now()-new Date(surgeryDate).getTime())/86400000)):0;
-  const exercises=getExsByDay(days);
+  const baseAngle=isFishing?-0.55:-0.35;
+  const rod0x=10,rod0y=-80;
+  const rodLen=110;
+  const curAngle=rodAngle||baseAngle;
+  const rodEx=rod0x+Math.cos(curAngle)*rodLen;
+  const rodEy=rod0y+Math.sin(curAngle)*rodLen;
+  GX.strokeStyle='#5a3010';GX.lineWidth=4;GX.lineCap='round';
+  GX.beginPath();GX.moveTo(rod0x,rod0y);GX.lineTo(rodEx,rodEy);GX.stroke();
+  GX.strokeStyle='#7a4a1e';GX.lineWidth=2;
+  const tipX=rodEx+Math.cos(curAngle)*18;const tipY=rodEy+Math.sin(curAngle)*18;
+  GX.beginPath();GX.moveTo(rodEx,rodEy);GX.lineTo(tipX,tipY);GX.stroke();
+  GX.restore();
 
-  const handleComplete=(id)=>{
-    const newCompleted={...completed,[id]:true};
-    setCompleted(newCompleted);
-    const done=exercises.filter(e=>newCompleted[e.id]).length;
-    setCompletionHistory(h=>({...h,[getTodayStr()]:{done,total:exercises.length}}));
-    const msg=PRAISE[Math.floor(Math.random()*PRAISE.length)];
-    setPraiseToast(msg);
-    setTimeout(()=>setPraiseToast(''),3500);
-    if(done>=exercises.length){
-      setSelectedEx(null);
-      setTimeout(()=>setShowNRS(true),100);
-    } else {
-      setSelectedEx(null);
+  const boatBobY=wY-2+bob;
+  if(fishSt===FS.CASTING||fishSt===FS.FLYING||fishSt===FS.IDLE){
+    const curAngle2=rodAngle||(isFishing?-0.55:-0.35);
+    const rodExW=10+Math.cos(curAngle2)*rodLen;const rodEyW=-80+Math.sin(curAngle2)*rodLen;
+    GX.strokeStyle='rgba(220,220,220,0.8)';GX.lineWidth=1.2;
+    GX.beginPath();GX.moveTo(bx+rodExW+Math.cos(curAngle2)*18,boatBobY+rodEyW+Math.sin(curAngle2)*18);
+    if(fishSt===FS.FLYING){
+      const midX=(bx+rodExW+bobberX)/2;const midY=Math.min(boatBobY+rodEyW,bobberY)-60;
+      GX.quadraticCurveTo(midX,midY,bobberX,bobberY);
+    }else{
+      GX.quadraticCurveTo(bobberX,(wY-18),bobberX,bobberY);
     }
-  };
-
-  if(!surgeryDate) return(
-    <div className="app" data-dark={String(dark)}><Styles/><OnboardingScreen onConfirm={d=>setSurgeryDate(d)}/></div>
-  );
-
-  return(
-    <div className="app" data-dark={String(dark)} style={{fontSize:[14,16,18][fontSize]}}>
-      <Styles/>
-      {showNRS&&(
-        <div style={{position:'fixed',inset:0,zIndex:200,background:'var(--bg)',maxWidth:430,margin:'0 auto'}}>
-          <NRSDailyCheck onConfirm={score=>{setDailyNRS(score);setShowNRS(false);setTab('home');}}/>
-        </div>
-      )}
-      {selectedEx&&!showNRS?(
-        <ExerciseDetail
-          ex={selectedEx}
-          exercises={exercises}
-          completed={completed}
-          onBack={()=>setSelectedEx(null)}
-          onComplete={()=>handleComplete(selectedEx.id)}
-        />
-      ):(
-        <>
-          {tab==='home'&&<HomeScreen days={days} exercises={exercises} completed={completed} onSelectEx={setSelectedEx} dailyNRS={dailyNRS} praiseToast={praiseToast}/>}
-          {tab==='exercises'&&<AllExercisesScreen onSelect={setSelectedEx}/>}
-          {tab==='progress'&&<ProgressScreen completionHistory={completionHistory} days={days} exercises={exercises} dailyNRS={dailyNRS}/>}
-          {tab==='settings'&&<SettingsScreen dark={dark} setDark={setDark} fontSize={fontSize} setFontSize={setFontSize} notif={notif} setNotif={setNotif} surgeryDate={surgeryDate} setSurgeryDate={setSurgeryDate}/>}
-          {!showNRS&&<BottomNav tab={tab} setTab={setTab}/>}
-        </>
-      )}
-    </div>
-  );
+    GX.stroke();
+    if(fishSt===FS.IDLE)drawBobber(bobberX,bobberY);
+    else if(fishSt===FS.FLYING){GX.fillStyle='#ff2222';GX.beginPath();GX.arc(bobberX,bobberY,5,0,Math.PI*2);GX.fill();}
+  }
+  if(fishSt===FS.CATCHING)drawCatchMotion(boatBobY);
 }
 
-/* ─── 마운트 ─── */
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App/>);
+function drawBobber(x,y){
+  GX.save();
+  GX.fillStyle='#ff2222';GX.beginPath();GX.arc(x,y,8,Math.PI,0);GX.fill();
+  GX.fillStyle='#fff';GX.beginPath();GX.arc(x,y,8,0,Math.PI);GX.fill();
+  GX.fillStyle='#ff8800';GX.fillRect(x-1,y-8,2,16);
+  GX.globalAlpha=0.3;GX.strokeStyle='rgba(255,255,255,0.6)';GX.lineWidth=1;
+  [11,17].forEach((r,i)=>{GX.globalAlpha=0.25-i*0.06;GX.beginPath();GX.ellipse(x,y+2,r,r*0.3,0,0,Math.PI*2);GX.stroke();});
+  GX.restore();
+}
 
-  </script>
+function drawCatchMotion(boatBobY){
+  if(!catchFish)return;
+  const f=catchFish;
+  const prog=Math.min(catchAnim,1);
+  const wY=GH*0.44;
+  const startX=bobberX,startY=wY+5;
+  const endX=boatX-10,endY=boatBobY-90;
+  const ctrlX=(startX+endX)/2-30;
+  const ctrlY=wY-200;
+  const t2=prog;
+  const fx=(1-t2)*(1-t2)*startX+2*(1-t2)*t2*ctrlX+t2*t2*endX;
+  const fy=(1-t2)*(1-t2)*startY+2*(1-t2)*t2*ctrlY+t2*t2*endY;
+
+  GX.save();GX.translate(fx,fy);
+  const dx=fx-((1-Math.min(t2+0.01,1))*(1-Math.min(t2+0.01,1))*startX+2*(1-Math.min(t2+0.01,1))*Math.min(t2+0.01,1)*ctrlX+Math.min(t2+0.01,1)*Math.min(t2+0.01,1)*endX);
+  const dy=fy-((1-Math.min(t2+0.01,1))*(1-Math.min(t2+0.01,1))*startY+2*(1-Math.min(t2+0.01,1))*Math.min(t2+0.01,1)*ctrlY+Math.min(t2+0.01,1)*Math.min(t2+0.01,1)*endY);
+  GX.rotate(Math.atan2(-dy,-dx)+Math.sin(prog*Math.PI*4)*0.15);
+  GX.shadowColor=f.color;GX.shadowBlur=20;GX.fillStyle=f.color;
+  const sz=f.sz*50;
+  GX.beginPath();GX.ellipse(0,0,sz,sz*0.47,0,0,Math.PI*2);GX.fill();
+  GX.beginPath();GX.moveTo(-sz,0);GX.lineTo(-sz*1.38,-sz*0.34);GX.lineTo(-sz*1.38,sz*0.34);GX.closePath();GX.fill();
+  GX.strokeStyle='rgba(255,255,255,0.28)';GX.lineWidth=1.4;
+  for(let i=0;i<3;i++){GX.beginPath();GX.arc((i-1)*sz*0.36,-sz*0.08,sz*0.30,Math.PI,0);GX.stroke();}
+  GX.fillStyle='#eee';GX.beginPath();GX.arc(sz*0.50,-sz*0.13,sz*0.15,0,Math.PI*2);GX.fill();
+  GX.fillStyle='#111';GX.beginPath();GX.arc(sz*0.53,-sz*0.13,sz*0.08,0,Math.PI*2);GX.fill();
+  GX.restore();
+
+  GX.strokeStyle='rgba(220,220,220,0.7)';GX.lineWidth=1.2;
+  GX.beginPath();GX.moveTo(boatX+10+(Math.cos(-0.35)*128),boatBobY-80+(Math.sin(-0.35)*128));
+  GX.lineTo(fx,fy);GX.stroke();
+
+  if(prog<0.18&&Math.random()<0.35)
+    splashParts.push({x:startX+(Math.random()-0.5)*36,y:wY,vx:(Math.random()-0.5)*5,vy:-(1.5+Math.random()*3.5),life:1,sz:3+Math.random()*5});
+  if(prog>0.6){
+    GX.save();GX.globalAlpha=Math.min(1,(prog-0.6)/0.4);
+    GX.fillStyle='#FFD700';GX.shadowColor='#FFD700';GX.shadowBlur=12;
+    GX.font='bold 32px Jua,sans-serif';GX.textAlign='center';
+    GX.fillText(`🎉 ${f.emoji} ${f.name}!`,fx,fy-50);GX.restore();
+  }
+}
+
+function drawParticles(){
+  EFX.clearRect(0,0,GW,GH);
+  particles.forEach(p=>{
+    EFX.save();EFX.globalAlpha=p.life*0.9;EFX.fillStyle=p.color;
+    EFX.translate(p.x,p.y);EFX.rotate(p.rot);
+    EFX.fillRect(-p.sz/2,-p.sz/2,p.sz,p.sz);
+    EFX.restore();
+  });
+}
+
+function drawHUD(){
+  if(gameState!=='playing')return;
+  const night=isNight();
+  const remain=Math.max(0,GAME_DURATION-gameTime);
+  const urgent=remain<=60,superUrgent=remain<=10;
+  const mm=Math.floor(remain/60),ss=Math.floor(remain%60);
+  const ts=`⏱ ${mm}:${ss<10?'0':''}${ss}`;
+
+  /* 타이머 배경 패널 */
+  GX.fillStyle='rgba(0,0,0,0.45)';
+  GX.beginPath();GX.roundRect(GW/2-85,8,170,40,8);GX.fill();
+
+  if(superUrgent){
+    const p=0.7+Math.sin(Date.now()*0.015)*0.3;
+    GX.fillStyle=`rgba(255,${Math.floor(40*p)},${Math.floor(40*p)},1)`;
+    GX.shadowColor='#ff0000';GX.shadowBlur=18+p*12;
+    GX.font=`bold ${42+Math.floor(p*6)}px Jua,sans-serif`;GX.textAlign='center';
+    GX.fillText(ts,GW/2,38);GX.shadowBlur=0;
+    GX.fillStyle=`rgba(255,80,80,${0.9+p*0.1})`;
+    GX.font='bold 18px Jua,sans-serif';GX.fillText('⚠️ 시간이 얼마 없어요!',GW/2,62);
+  }else if(urgent){
+    GX.fillStyle='#ff6666';GX.shadowColor='rgba(255,0,0,0.5)';GX.shadowBlur=8;
+    GX.font='bold 34px Jua,sans-serif';GX.textAlign='center';GX.fillText(ts,GW/2,38);GX.shadowBlur=0;
+  }else{
+    GX.fillStyle='#ffffff';GX.shadowColor='rgba(0,0,0,0.5)';GX.shadowBlur=4;
+    GX.font='bold 28px Jua,sans-serif';GX.textAlign='center';GX.fillText(ts,GW/2,36);GX.shadowBlur=0;
+  }
+
+  /* 점수 패널 */
+  GX.fillStyle='rgba(0,0,0,0.45)';
+  GX.beginPath();GX.roundRect(GW-160,6,150,60,8);GX.fill();
+  GX.fillStyle='#FFD700';GX.shadowColor='#FFD700';GX.shadowBlur=8;
+  GX.font='bold 26px Jua,sans-serif';GX.textAlign='right';GX.fillText(`⭐ ${score}점`,GW-10,32);GX.shadowBlur=0;
+  GX.fillStyle='#90f0ff';GX.font='bold 18px Jua,sans-serif';GX.textAlign='right';
+  GX.fillText(`🐟 ${fishCount}마리`,GW-10,54);
+
+  /* 하단 힌트 */
+  if(fishSt===FS.IDLE){
+    GX.fillStyle='rgba(0,0,0,0.55)';
+    GX.beginPath();GX.roundRect(GW/2-210,GH-42,420,34,8);GX.fill();
+    GX.fillStyle='#ffe080';GX.font='bold 20px Jua,sans-serif';GX.textAlign='center';
+    GX.fillText('🏋️ 스쿼트 자세를 취하면 낚시 발동!',GW/2,GH-18);
+  }
+
+  /* 점수 팝업 */
+  scorePopups.forEach(p=>{
+    GX.save();GX.globalAlpha=p.life;
+    GX.fillStyle='rgba(0,0,0,0.5)';
+    GX.font=`bold ${26+Math.floor((1-p.life)*4)}px Jua,sans-serif`;
+    GX.textAlign='center';
+    const tw=GX.measureText('+10점!').width;
+    GX.fillRect(p.x-tw/2-6,p.y-26,tw+12,34);
+    GX.fillStyle='#FFD700';GX.shadowColor='#FFD700';GX.shadowBlur=10;
+    GX.fillText('+10점!',p.x,p.y);GX.restore();
+  });
+  GX.textAlign='left';
+}
+
+function renderGame(){
+  GX.clearRect(0,0,GW,GH);
+  drawScene();drawBoat();drawHUD();
+  drawParticles();
+}
+
+/* ══ 낚시 로직 ══ */
+let castTimer=0;
+function startFishing(){
+  if(fishSt!==FS.IDLE)return;
+  const fi=Math.floor(Math.random()*FISH_LIST.length);
+  catchFish={...FISH_LIST[fi]};
+  fishSt=FS.CASTING;
+  castTimer=0;castPhase=0;
+  playCast();
+}
+
+function updateFishing(dt){
+  const wY=GH*0.44;
+  const castEndX=boatX+380+Math.sin(bobberPhase*0.3)*12;
+  const castEndY=wY+8+Math.sin(bobberPhase)*5;
+
+  if(fishSt===FS.CASTING){
+    castTimer+=dt;
+    rodAngle=-0.35-(Math.sin(castTimer*Math.PI/0.25)*0.8);
+    if(castTimer>0.25){fishSt=FS.FLYING;castTimer=0;castPhase=0;bobberX=boatX+140;bobberY=wY-80;}
+  }else if(fishSt===FS.FLYING){
+    castTimer+=dt;castPhase=Math.min(castTimer/0.55,1);
+    const t2=castPhase;
+    const ctrlX=boatX+260,ctrlY=wY-140;
+    bobberX=(1-t2)*(1-t2)*(boatX+140)+2*(1-t2)*t2*ctrlX+t2*t2*castEndX;
+    bobberY=(1-t2)*(1-t2)*(wY-80)+2*(1-t2)*t2*ctrlY+t2*t2*castEndY;
+    rodAngle=-0.35+castPhase*0.15;
+    if(castPhase>=1){
+      fishSt=FS.CATCHING;catchAnim=0;
+      bobberX=castEndX;bobberY=castEndY;
+      playSplash();
+      for(let i=0;i<18;i++)splashParts.push({x:castEndX+(Math.random()-0.5)*42,y:wY,vx:(Math.random()-0.5)*5.5,vy:-(2+Math.random()*4),life:1,sz:3+Math.random()*5});
+    }
+  }else if(fishSt===FS.CATCHING){
+    catchAnim+=dt*1.08;
+    rodAngle=-0.55-(catchAnim*0.1);
+    if(Math.random()<0.08)bubbles.push({x:bobberX+(Math.random()-0.5)*14,y:GH*0.44,vy:-0.6-Math.random()*0.6,life:1,sz:2+Math.random()*4});
+    if(catchAnim>=1){
+      score+=10;fishCount++;celebrateTimer=1.8;
+      if(catchFish.name==='월척!'){
+        playBigSuccess();
+        spawnParticles(boatX,GH*0.44-60,'#FFD700',40);
+        spawnParticles(boatX+50,GH*0.44-80,'#ff88ff',30);
+        speakExcited(catchFish.voice||'월척이다! 최고야!');
+      }else{
+        playSuccess();
+        spawnParticles(boatX+40,GH*0.44-50,catchFish.color,24);
+        speakAnime(catchFish.voice||`${catchFish.name} 낚았다!`);
+      }
+      scorePopups.push({x:boatX+60+Math.random()*40,y:GH*0.38,life:1});
+      if(currentUser){currentUser.totalFish=(currentUser.totalFish||0)+1;if(score>(currentUser.bestScore||0))currentUser.bestScore=score;saveProgress();}
+      fishSt=FS.DONE;catchFish=null;rodAngle=0;
+      setTimeout(()=>{fishSt=FS.IDLE;},600);
+    }
+  }
+
+  if(fishSt===FS.IDLE){
+    bobberPhase+=dt*1.4;rodAngle=0;
+    bobberX=boatX+215+Math.sin(bobberPhase*0.3)*10;
+    bobberY=wY+8+Math.sin(bobberPhase)*5;
+  }
+
+  document.getElementById('fight-txt').textContent=
+    fishSt===FS.CATCHING?`${Math.floor(catchAnim*100)}%`:
+    fishSt===FS.FLYING?'비행중!':fishSt===FS.CASTING?'캐스팅!':'대기';
+  document.getElementById('fight-mf').style.width=
+    fishSt===FS.CATCHING?`${Math.min(catchAnim*100,100)}%`:
+    fishSt===FS.FLYING?`${Math.floor(castPhase*100)}%`:'0%';
+}
+
+function updateGame(dt){
+  gameTime+=dt;waveTick+=1;
+  const remain=GAME_DURATION-gameTime;
+
+  if(celebrateTimer>0)celebrateTimer=Math.max(0,celebrateTimer-dt);
+
+  seagulls.forEach(s=>{s.fp+=0.06;s.x-=s.speed;s.y+=Math.sin(s.vyp)*0.3;s.vyp+=0.02;if(s.x<-80)Object.assign(s,mkGull(false),{x:GW+80});});
+  clouds.forEach(c=>{c.x-=c.speed;if(c.x<-150)Object.assign(c,mkCloud(false));});
+  underwaterFish.forEach(f=>{f.x+=f.speed*f.dir;f.ph+=0.018;if(f.x>GW+30){f.x=-30;f.dir=1;}if(f.x<-30){f.x=GW+30;f.dir=-1;}});
+  dolphins.forEach(d=>{d.jumpPhase+=0.04;d.x+=d.speed*d.dir;d.y=d.groundY-Math.max(0,Math.sin(d.jumpPhase))*80;if(d.x>GW+60)d.x=-60;if(d.x<-60)d.x=GW+60;});
+  whales.forEach(w=>{w.x+=w.speed*w.dir;if(w.x>GW+200){w.x=-200;w.dir=1;}});
+  sharks.forEach(s=>{s.x+=s.speed*s.dir;s.ph+=0.015;if(s.x<-100){s.x=GW+100;s.dir=-1;}if(s.x>GW+100){s.x=-100;s.dir=1;}});
+  bubbles.forEach(b=>{b.y+=b.vy;b.life-=0.012;});bubbles=bubbles.filter(b=>b.life>0);
+  splashParts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life-=0.035;});splashParts=splashParts.filter(p=>p.life>0);
+  scorePopups.forEach(p=>{p.y-=0.8;p.life-=0.018;});scorePopups=scorePopups.filter(p=>p.life>0);
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.25;p.life-=0.025;p.rot+=0.08;});particles=particles.filter(p=>p.life>0);
+
+  updateFishing(dt);
+
+  if(!alarmPlayed&&remain<=60){alarmPlayed=true;playAlarm();}
+  if(remain<=10&&Math.floor(remain)!==Math.floor(remain+dt)){playBeep(remain<=1);}
+
+  if(gameTime>=GAME_DURATION){
+    gameState='gameover';
+    stopBGM();stopWave();
+    showGameOver();
+  }
+}
+
+function showGoPopup(){
+  const popup=document.getElementById('go-popup');
+  popup.className='';  
+  popup.style.display='flex';
+  requestAnimationFrame(()=>{
+    popup.className='show';
+    setTimeout(()=>{
+      popup.className='hide';
+      setTimeout(()=>{popup.style.display='none';popup.className='';},450);
+    },900);
+  });
+}
+
+/* ═══ 카운트다운 ═══ */
+function beginCountdown(){
+  document.getElementById('go-overlay').style.display='none';
+  document.getElementById('go-popup').style.display='none';
+  document.getElementById('lb-standalone-overlay').style.display='none';
+
+  score=0;fishCount=0;gameTime=0;alarmPlayed=false;
+  fishSt=FS.IDLE;catchFish=null;catchAnim=0;celebrateTimer=0;
+  particles=[];scorePopups=[];bubbles=[];splashParts=[];
+
+  const cdEl=document.getElementById('cd-overlay');
+  const numEl=document.getElementById('cd-num');
+  const msgEl=document.getElementById('cd-msg');
+  cdEl.style.display='flex';
+
+  let count=3;
+  numEl.textContent=count;
+  msgEl.textContent='준비하세요!';
+  playBeep(false);
+
+  const iv=setInterval(()=>{
+    count--;
+    if(count>0){
+      numEl.style.animation='none';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{numEl.style.animation='';numEl.textContent=count;}));
+      playBeep(false);
+    }else{
+      numEl.style.animation='none';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        numEl.style.animation='';
+        numEl.textContent='GO!';
+        numEl.style.color='#43ff6b';
+        msgEl.textContent='낚시 시작! 스쿼트 자세로 낚시하세요! 🎣';
+      }));
+      playBeep(true);
+      setTimeout(()=>{
+        cdEl.style.display='none';
+        numEl.style.color='';
+        gameState='playing';
+        if(!loopStarted){loopStarted=true;requestAnimationFrame(gameLoop);}
+        startBGM();startWave();
+        showGoPopup();
+        speakAnime('시작! 스쿼트로 낚시를 해봐요!');
+      },800);
+      clearInterval(iv);
+    }
+  },1000);
+}
+
+/* ═══ 게임오버 ═══ */
+function showGameOver(){
+  const overlay=document.getElementById('go-overlay');
+
+  document.getElementById('go-score-txt').textContent=`${score}점`;
+  document.getElementById('go-fish-cnt').textContent=fishCount;
+  document.getElementById('go-level').textContent=calcLevel(currentUser?.totalFish||0);
+  document.getElementById('go-best').textContent=currentUser?.bestScore||score;
+
+  const db=loadDB();
+  const lb=Object.values(db).sort((a,b)=>(b.bestScore||0)-(a.bestScore||0));
+  const myRank=lb.findIndex(u=>u.id===currentUser?.id)+1;
+  const rankEl=document.getElementById('go-rank-txt');
+  if(myRank>0){
+    const medals=['🥇','🥈','🥉'];
+    rankEl.textContent=`${medals[myRank-1]||'#'+myRank} ${myRank}위`;
+  }else if(score>0){rankEl.textContent='🎣 기록 달성!';}
+  else{rankEl.textContent='';}
+
+  buildLBRows(document.getElementById('go-lb-table'),currentUser?.id);
+  overlay.style.display='flex';
+  speakAnime(`게임 종료! ${score}점 획득! 대단해요!`);
+}
+
+/* ═══ 메인 루프 ═══ */
+function gameLoop(ts){
+  const dt=Math.min((ts-lastTS)/1000,0.05);
+  lastTS=ts;
+  if(gameState==='playing'){updateGame(dt);}
+  renderGame();
+  requestAnimationFrame(gameLoop);
+}
+
+/* ═══ 초기화 ═══ */
+window.addEventListener('load',()=>{
+  runTitleBg();
+  animTitlePenguin();
+  runSelectBg();
+  document.getElementById('profile-badge').style.display='none';
+  initCamera();
+  enableKB();
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
+});
+</script>
 </body>
 </html>
